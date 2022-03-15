@@ -67,7 +67,6 @@ fn main() {
 
     cpu.run(|cpu| {
         handle_user_input(cpu, &mut event_pump);
-        println!("q");
         cpu.memory.write(0xFE, rng.gen_range(1, 16));
  
         if read_screen_state(cpu, &mut screen_state) {
