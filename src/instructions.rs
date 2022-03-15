@@ -6,6 +6,7 @@ pub struct Instruction {
     pub addr_mode: AddressingMode,
     pub name: &'static str,
     pub bytes: u8,
+    #[allow(dead_code)]
     cycles: u8,
 }
 
@@ -235,22 +236,22 @@ impl CPU {
         self.update_result_flags(self.regs.a);
     }
 
-    pub(crate) fn sub_from_accumulator(&mut self, value: u8) {
-        let (sum, did_overflow1) = self.regs.a.overflowing_sub(value);
-        let (accumulator, did_overflow2) = sum.overflowing_sub(
-            if get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION) {
-                1
-            } else {
-                0
-            }
-        );
+    // pub(crate) fn sub_from_accumulator(&mut self, value: u8) {
+    //     let (sum, did_overflow1) = self.regs.a.overflowing_sub(value);
+    //     let (accumulator, did_overflow2) = sum.overflowing_sub(
+    //         if get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION) {
+    //             1
+    //         } else {
+    //             0
+    //         }
+    //     );
         
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, did_overflow1 | did_overflow2);
-        set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
+    //     set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, did_overflow1 | did_overflow2);
+    //     set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
         
-        self.regs.a = accumulator;
-        self.update_result_flags(self.regs.a);
-    }
+    //     self.regs.a = accumulator;
+    //     self.update_result_flags(self.regs.a);
+    // }
 
     fn stack_pop(&mut self) -> u8 {
         self.regs.sp = self.regs.sp.wrapping_add(1);

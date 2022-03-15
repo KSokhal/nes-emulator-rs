@@ -1,5 +1,3 @@
-use std::panic;
-
 use cpu::CPU;
 
 use rand::Rng;
