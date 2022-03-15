@@ -4,13 +4,13 @@ use crate::registers::{ZERO_RESULT_FLAG_BYTE_POSITION, NEGATIVE_RESULT_FLAG_BYTE
 
 pub struct Instruction {
     pub addr_mode: AddressingMode,
-    name: &'static str,
-    bytes: u8,
+    pub name: &'static str,
+    pub bytes: u8,
     cycles: u8,
 }
 
 const STACK: u16 = 0x0100;
-const STACK_RESET: u8 = 0xfd;
+pub(crate) const STACK_RESET: u8 = 0xfd;
 
 impl CPU {
     pub(crate) fn get_instruction(&self, opcode: u8) -> Instruction {
@@ -52,6 +52,8 @@ impl CPU {
             0x50 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "BVC", bytes: 2, cycles: 2 /* +1 if branch succeeds, +2 if to a new page */ },
             0x70 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "BPL", bytes: 2, cycles: 2 /* +1 if branch succeeds, +2 if to a new page */ },
         
+            0x00 => Instruction {addr_mode: AddressingMode::NoneAddressing, name: "BRK", bytes: 1, cycles: 7},
+
             0x18 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "CLC", bytes: 1, cycles: 2 },
             0xD8 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "CLD", bytes: 1, cycles: 2 },
             0x58 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "CLI", bytes: 1, cycles: 2 },
@@ -230,6 +232,7 @@ impl CPU {
         set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
         
         self.regs.a = accumulator;
+        self.update_result_flags(self.regs.a);
     }
 
     pub(crate) fn sub_from_accumulator(&mut self, value: u8) {
@@ -246,6 +249,7 @@ impl CPU {
         set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
         
         self.regs.a = accumulator;
+        self.update_result_flags(self.regs.a);
     }
 
     fn stack_pop(&mut self) -> u8 {
@@ -322,8 +326,9 @@ impl CPU {
         let value = self.memory.read(addr);
         
         let check = self.regs.a & value;
-        set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, get_bit(check, 6));
-        self.update_result_flags(check);
+        set_bit(&mut self.regs.p, ZERO_RESULT_FLAG_BYTE_POSITION, check == 0);
+        set_bit(&mut self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION, get_bit(value, 7));
+        set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, get_bit(value, 6));
     }
 
     pub(crate) fn bne(&mut self) {
@@ -372,9 +377,9 @@ impl CPU {
         let value = self.memory.read(addr);
         let result = value.wrapping_sub(1);
 
+        self.memory.write(addr, result);
+        
         self.update_result_flags(result);
-
-        self.memory.write(addr, result)
     }
 
     pub(crate) fn dex(&mut self) {
@@ -414,9 +419,9 @@ impl CPU {
     }
 
     pub(crate) fn iny(&mut self) {
-        self.regs.x = self.regs.x.wrapping_add(1);
+        self.regs.y = self.regs.y.wrapping_add(1);
 
-        self.update_result_flags(self.regs.x);
+        self.update_result_flags(self.regs.y);
     }
 
     pub(crate) fn jmp(&mut self) {
@@ -565,7 +570,8 @@ impl CPU {
         let addr = self.get_op_addr(mode);
         let value = self.memory.read(addr);
 
-        self.sub_from_accumulator(value);
+        // self.sub_from_accumulator(value);
+        self.add_to_accumulator(((value as i8).wrapping_neg().wrapping_sub(1)) as u8);
     }
 
     pub(crate) fn sta(&mut self, mode: &AddressingMode) {

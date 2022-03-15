@@ -1,6 +1,8 @@
+use crate::instructions::STACK_RESET;
 use crate::memory::Memory;
 use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
 use crate::lib::set_bit;
+
 #[derive(Default)]
 pub(crate) struct CPU {
     pub regs: Registers,
@@ -10,18 +12,24 @@ pub(crate) struct CPU {
 
 impl CPU {
     pub fn load(&mut self, program: Vec<u8>) {
-        self.memory.memory[0x8000 .. (0x8000 + program.len())].copy_from_slice(&program[..]);
-        self.memory.write_16(0xFFFC, 0x8000);
+        self.memory.memory[0x0600..(0x0600 + program.len())].copy_from_slice(&program[..]);
+        self.memory.write_16(0xFFFC, 0x0600);
     }
 
-    pub fn run(&mut self) {
+    pub fn run<F>(&mut self, mut callback: F) 
+    where 
+        F: FnMut(&mut CPU),
+    {
         // note: we move  intialization of program_counter from here to load function
         loop {
+
             let opscode = self.memory.read(self.regs.pc);
+            println!("0x{:02X} 0x{:04X}", opscode, self.regs.pc);
             self.regs.pc += 1;
+            let program_counter_state = self.regs.pc;
 
             let instruction = self.get_instruction(opscode);
-
+            println!("{:?}", instruction.name);
             match opscode {
                 0x00 => return,
                 0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => self.adc(&instruction.addr_mode),
@@ -59,7 +67,7 @@ impl CPU {
                 0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => self.ldy(&instruction.addr_mode),
                 0x4A => self.lsr_accumulator(),
                 0x46 | 0x56 | 0x4E | 0x5E => self.lsr(&instruction.addr_mode),
-                0xEA => return,
+                0xEA => {},
                 0x09 | 0x05 | 0x15 | 0x0D | 0x1D | 0x19 | 0x01 | 0x11 => self.ora(&instruction.addr_mode),
                 0x48 => self.pha(),
                 0x08 => self.php(),
@@ -86,11 +94,24 @@ impl CPU {
                 0x98 => self.tya(),
                 _ => todo!()
             }
+
+            if program_counter_state == self.regs.pc {
+                self.regs.pc += (instruction.bytes - 1) as u16;
+            }
+
+            callback(self);
+
         }
     }
-        
+    
     pub fn reset(&mut self) {
-        self.regs.reset();
+        self.regs.a = 0;
+        self.regs.x = 0;
+        self.regs.y = 0;
+        self.regs.sp = STACK_RESET;
+        self.regs.p = 0b100100;
+        // self.memory = [0; 0xFFFF];
+
         self.regs.pc = self.memory.read_16(0xFFFC);
     }
 }
