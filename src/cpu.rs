@@ -1,6 +1,6 @@
 use crate::memory::Memory;
-use crate::registers::Registers;
-
+use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
+use crate::lib::set_bit;
 #[derive(Default)]
 pub(crate) struct CPU {
     pub regs: Registers,
@@ -57,45 +57,33 @@ impl CPU {
                 0xA9 | 0xA5 | 0xB5 | 0xAD | 0xBD | 0xB9 | 0xA1 | 0xB1 => self.lda(&instruction.addr_mode),
                 0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => self.ldx(&instruction.addr_mode),
                 0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => self.ldy(&instruction.addr_mode),
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                0x85 => {
-                    self.sta(&AddressingMode::ZeroPage);
-                    self.regs.pc += 1;
-                },
-                0x95 => {
-                    self.sta(&AddressingMode::ZeroPageX);
-                    self.regs.pc += 1;
-                },
-                // 0xA5 => {
-                //     self.lda(&AddressingMode::ZeroPage);
-                //     self.regs.pc += 1;
-                // },
-                // 0xA9 => {
-                //     self.lda(&AddressingMode::Immediate);
-                //     self.regs.pc += 1;
-                // },
+                0x4A => self.lsr_accumulator(),
+                0x46 | 0x56 | 0x4E | 0x5E => self.lsr(&instruction.addr_mode),
+                0xEA => return,
+                0x09 | 0x05 | 0x15 | 0x0D | 0x1D | 0x19 | 0x01 | 0x11 => self.ora(&instruction.addr_mode),
+                0x48 => self.pha(),
+                0x08 => self.php(),
+                0x68 => self.pla(),
+                0x28 => self.plp(),
+                0x2A => self.rol_accumulator(),
+                0x26 | 0x36 | 0x2E | 0x3E => self.rol(&instruction.addr_mode),
+                0x6A => self.ror_accumulator(),
+                0x66 | 0x76 | 0x6E | 0x7E => self.ror(&instruction.addr_mode),
+                0x40 => self.rti(),
+                0x60 => self.rts(),
+                0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => self.sbc(&instruction.addr_mode),
+                0x38 => set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, true),
+                0xF8 => set_bit(&mut self.regs.p, DECIMAL_MODE_FLAG_BYTE_POSITION, true),
+                0x78 => set_bit(&mut self.regs.p, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, true),
+                0x85 | 0x95 | 0x8D | 0x9D | 0x99 | 0x81 | 0x91 => self.sta(&instruction.addr_mode),
+                0x86 | 0x96 | 0x8E => self.stx(&instruction.addr_mode),
+                0x84 | 0x94 | 0x8C => self.sty(&instruction.addr_mode),
                 0xAA => self.tax(),
-                // 0xAD => {
-                //     self.lda(&AddressingMode::Absolute);
-                //     self.regs.pc += 2;
-                // },
-                // 0xE8 =>self.inx(),
+                0xA8 => self.tay(),
+                0xBA => self.tsx(),
+                0x8A => self.txa(),
+                0x9A => self.txs(),
+                0x98 => self.tya(),
                 _ => todo!()
             }
         }

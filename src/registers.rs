@@ -12,7 +12,7 @@ pub(crate) struct Registers {
     pub x: u8, // Index Register X
     pub y: u8, // Index Register X
     pub p: u8, // Processor Status
-    pub sp: u16, // Stack Pointer
+    pub sp: u8, // Stack Pointer
     pub pc: u16, // Program Counter
 
 }
