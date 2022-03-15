@@ -24,12 +24,13 @@ impl CPU {
         loop {
 
             let opscode = self.memory.read(self.regs.pc);
-            println!("0x{:02X} 0x{:04X}", opscode, self.regs.pc);
             self.regs.pc += 1;
             let program_counter_state = self.regs.pc;
 
             let instruction = self.get_instruction(opscode);
-            println!("{:?}", instruction.name);
+
+            println!("0x{:02X} 0x{:04X} {:?}", opscode, self.regs.pc, instruction.name);
+            
             match opscode {
                 0x00 => return,
                 0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => self.adc(&instruction.addr_mode),

@@ -19,7 +19,7 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem
-        .window("Snake game", (32.0 * 10.0) as u32, (32.0 * 10.0) as u32)
+        .window("Snake", (32.0 * 10.0) as u32, (32.0 * 10.0) as u32)
         .position_centered()
         .build().unwrap();
 
@@ -88,8 +88,6 @@ fn handle_user_input(cpu: &mut CPU, event_pump: &mut EventPump) {
             },
             Event::KeyDown { keycode: Some(Keycode::W), .. } => {
                 cpu.memory.write(0xFF, 0x77);
-                println!("BRESKIGNSKGHAHDFGJ");
-                println!("0x{:02X} 0x{:04X}", cpu.memory.read(cpu.regs.pc), cpu.regs.pc);
             },
             Event::KeyDown { keycode: Some(Keycode::S), .. } => {
                 cpu.memory.write(0xFF, 0x73);
