@@ -9,6 +9,8 @@ pub struct Instruction {
     cycles: u8,
 }
 
+const STACK: u16 = 0x0100;
+const STACK_RESET: u8 = 0xfd;
 
 impl CPU {
     pub(crate) fn get_instruction(&self, opcode: u8) -> Instruction {
@@ -55,9 +57,84 @@ impl CPU {
             0x58 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "CLI", bytes: 1, cycles: 2 },
             0xB8 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "CLV", bytes: 1, cycles: 2 },
 
+            0xC9 => Instruction { addr_mode: AddressingMode::Immediate, name: "CMP", bytes: 2, cycles: 2 },
+            0xC5 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "CMP", bytes: 2, cycles: 3 },
+            0xD5 => Instruction { addr_mode: AddressingMode::ZeroPageX, name: "CMP", bytes: 2, cycles: 4 },
+            0xCD => Instruction { addr_mode: AddressingMode::Absolute, name: "CMP", bytes: 3, cycles: 4 },
+            0xDD => Instruction { addr_mode: AddressingMode::AbsoluteX, name: "CMP", bytes: 3, cycles: 4 /* +1 if page crossed */ },
+            0xD9 => Instruction { addr_mode: AddressingMode::AbsoluteY, name: "CMP", bytes: 3, cycles: 4 /* +1 if page crossed */ },
+            0xC1 => Instruction { addr_mode: AddressingMode::IndirectX, name: "CMP", bytes: 2, cycles: 6 },
+            0xD1 => Instruction { addr_mode: AddressingMode::IndirectY, name: "CMP", bytes: 2, cycles: 5 /* +1 if page crossed */ },
+
+            0xE0 => Instruction { addr_mode: AddressingMode::Immediate, name: "CPX", bytes: 2, cycles: 2 },
+            0xE4 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "CPX", bytes: 2, cycles: 3 },
+            0xEC => Instruction { addr_mode: AddressingMode::Absolute, name: "CPX", bytes: 3, cycles: 4 },
+
+            0xC0 => Instruction { addr_mode: AddressingMode::Immediate, name: "CPY", bytes: 2, cycles: 2 },
+            0xC4 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "CPY", bytes: 2, cycles: 3 },
+            0xCC => Instruction { addr_mode: AddressingMode::Absolute, name: "CPY", bytes: 3, cycles: 4 },
+            
+            0xC6 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "DEC", bytes: 2, cycles: 5 },
+            0xD6 => Instruction { addr_mode: AddressingMode::ZeroPageX, name: "DEC", bytes: 2, cycles: 6 },
+            0xCE => Instruction { addr_mode: AddressingMode::Absolute, name: "DEC", bytes: 3, cycles: 6 },
+            0xDE => Instruction { addr_mode: AddressingMode::AbsoluteX, name: "DEC", bytes: 3, cycles: 7 },
+            
+            0xCA => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "DEX", bytes: 1, cycles: 2 },
+            0x88 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "DEY", bytes: 1, cycles: 2 },
+            
+            0x49 => Instruction { addr_mode: AddressingMode::Immediate, name: "EOR", bytes: 2, cycles: 2 },
+            0x45 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "EOR", bytes: 2, cycles: 3 },
+            0x55 => Instruction { addr_mode: AddressingMode::ZeroPageX, name: "EOR", bytes: 2, cycles: 4 },
+            0x4D => Instruction { addr_mode: AddressingMode::Absolute, name: "EOR", bytes: 3, cycles: 4 },
+            0x5D => Instruction { addr_mode: AddressingMode::AbsoluteX, name: "EOR", bytes: 3, cycles: 4 /* +1 if page crossed */ },
+            0x59 => Instruction { addr_mode: AddressingMode::AbsoluteY, name: "EOR", bytes: 3, cycles: 4 /* +1 if page crossed */ },
+            0x41 => Instruction { addr_mode: AddressingMode::IndirectX, name: "EOR", bytes: 2, cycles: 6 },
+            0x51 => Instruction { addr_mode: AddressingMode::IndirectY, name: "EOR", bytes: 2, cycles: 5 /* +1 if page crossed */ },
+            
+            0xE6 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "INC", bytes: 2, cycles: 5 },
+            0xF6 => Instruction { addr_mode: AddressingMode::ZeroPageX, name: "INC", bytes: 2, cycles: 6 },
+            0xEE => Instruction { addr_mode: AddressingMode::Absolute, name: "INC", bytes: 3, cycles: 6 },
+            0xFE => Instruction { addr_mode: AddressingMode::AbsoluteX, name: "INC", bytes: 3, cycles: 7 },
+            
+            0xE8 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "INX", bytes: 1, cycles: 2 },
+            0xC8 => Instruction { addr_mode: AddressingMode::NoneAddressing, name: "INY", bytes: 1, cycles: 2 },
+            
+            0x4C => Instruction { addr_mode: AddressingMode::Absolute, name: "JMP", bytes: 3, cycles: 3 },
+            0x6C => Instruction { addr_mode: AddressingMode::NoneAddressing , name: "JMP_INDIRECT", bytes: 3, cycles: 5 },
+            
+            0x20 => Instruction { addr_mode: AddressingMode::Absolute , name: "JSR", bytes: 3, cycles: 6 },
+            
+            0xA9 => Instruction { addr_mode: AddressingMode::Immediate, name: "LDA", bytes: 2, cycles: 2 },
+            0xA5 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "LDA", bytes: 2, cycles: 3 },
+            0xB5 => Instruction { addr_mode: AddressingMode::ZeroPageX, name: "LDA", bytes: 2, cycles: 4 },
+            0xAD => Instruction { addr_mode: AddressingMode::Absolute, name: "LDA", bytes: 3, cycles: 4 },
+            0xBD => Instruction { addr_mode: AddressingMode::AbsoluteX, name: "LDA", bytes: 3, cycles: 4 /* +1 if page crossed */ },
+            0xB9 => Instruction { addr_mode: AddressingMode::AbsoluteY, name: "LDA", bytes: 3, cycles: 4 /* +1 if page crossed */ },
+            0xA1 => Instruction { addr_mode: AddressingMode::IndirectX, name: "LDA", bytes: 2, cycles: 6 },
+            0xB1 => Instruction { addr_mode: AddressingMode::IndirectY, name: "LDA", bytes: 2, cycles: 5 /* +1 if page crossed */ },
+
+            0xA2 => Instruction { addr_mode: AddressingMode::Immediate, name: "LDX", bytes: 2, cycles: 2 },
+            0xA6 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "LDX", bytes: 2, cycles: 3 },
+            0xB6 => Instruction { addr_mode: AddressingMode::ZeroPageY, name: "LDX", bytes: 2, cycles: 4 },
+            0xAE => Instruction { addr_mode: AddressingMode::Absolute, name: "LDX", bytes: 3, cycles: 4 },
+            0xBE => Instruction { addr_mode: AddressingMode::AbsoluteY, name: "LDX", bytes: 3, cycles: 4 /* +1 if page crossed */ },
+
+            0xA0 => Instruction { addr_mode: AddressingMode::Immediate, name: "LDY", bytes: 2, cycles: 2 },
+            0xA4 => Instruction { addr_mode: AddressingMode::ZeroPage, name: "LDY", bytes: 2, cycles: 3 },
+            0xB4 => Instruction { addr_mode: AddressingMode::ZeroPageX, name: "LDY", bytes: 2, cycles: 4 },
+            0xAC => Instruction { addr_mode: AddressingMode::Absolute, name: "LDY", bytes: 3, cycles: 4 },
+            0xBC => Instruction { addr_mode: AddressingMode::AbsoluteX, name: "LDY", bytes: 3, cycles: 4 /* +1 if page crossed */ },
 
 
 
+
+
+
+
+
+            
+            
+            
             _ => panic!("Intruction not implemented for opcode: {:?}", opcode)
         }
     }
@@ -90,6 +167,31 @@ impl CPU {
         set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
         
         self.regs.a = accumulator;
+    }
+
+
+    fn stack_pop(&mut self) -> u8 {
+        self.regs.sp = self.regs.sp.wrapping_add(1);
+        self.memory.read((STACK as u16) + self.regs.sp as u16)
+    }
+
+    fn stack_push(&mut self, data: u8) {
+        self.memory.write((STACK as u16) + self.regs.sp as u16, data);
+        self.regs.sp = self.regs.sp.wrapping_sub(1)
+    }
+
+    fn stack_push_16(&mut self, data: u16) {
+        let hi = (data >> 8) as u8;
+        let lo = (data & 0xff) as u8;
+        self.stack_push(hi);
+        self.stack_push(lo);
+    }
+
+    fn stack_pop_16(&mut self) -> u16 {
+        let lo = self.stack_pop() as u16;
+        let hi = self.stack_pop() as u16;
+
+        hi << 8 | lo
     }
 
     pub(crate) fn adc(&mut self, mode: &AddressingMode) {
@@ -178,23 +280,91 @@ impl CPU {
         set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, false);
     }
 
+    pub(crate) fn compare(&mut self, mode: &AddressingMode, compare_reg: u8) {
+        let addr = self.get_op_addr(mode);
+        let value = self.memory.read(addr);
 
+        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, compare_reg >= value);
+        let result = compare_reg.wrapping_sub(value);
+        self.update_result_flags(result);
+    }
+ 
+    pub(crate) fn dec(&mut self, mode: &AddressingMode) {
+        let addr = self.get_op_addr(mode);
+        let value = self.memory.read(addr);
+        let result = value.wrapping_sub(1);
 
+        self.update_result_flags(result);
 
+        self.memory.write(addr, result)
+    }
 
+    pub(crate) fn dex(&mut self) {
+        self.regs.x = self.regs.x.wrapping_sub(1);
 
+        self.update_result_flags(self.regs.x);
+    }
 
+    pub(crate) fn dey(&mut self) {
+        self.regs.x = self.regs.x.wrapping_sub(1);
 
+        self.update_result_flags(self.regs.x);
+    }
 
+    pub(crate) fn eor(&mut self, mode: &AddressingMode) {
+        let addr = self.get_op_addr(mode);
+        let value = self.memory.read(addr);
 
+        self.regs.a ^= value;
+        self.update_result_flags(self.regs.a);
+    }
 
+    pub(crate) fn inc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_op_addr(mode);
+        let value = self.memory.read(addr);
+        let result = value.wrapping_add(1);
 
+        self.update_result_flags(result);
 
+        self.memory.write(addr, result)
+    }
 
+    pub(crate) fn inx(&mut self) {
+        self.regs.x = self.regs.x.wrapping_add(1);
 
+        self.update_result_flags(self.regs.x);
+    }
 
+    pub(crate) fn iny(&mut self) {
+        self.regs.x = self.regs.x.wrapping_add(1);
 
+        self.update_result_flags(self.regs.x);
+    }
 
+    pub(crate) fn jmp(&mut self) {
+        let mem_address = self.memory.read_16(self.regs.pc);
+        self.regs.pc = mem_address;
+    }
+
+    pub(crate) fn jmp_indirect(&mut self) {
+        let mem_address = self.memory.read_16(self.regs.pc);
+
+        let indirect_ref = if mem_address & 0x00FF == 0x00FF {
+            let lo = self.memory.read(mem_address);
+            let hi = self.memory.read(mem_address & 0xFF00);
+            (hi as u16) << 8 | (lo as u16)
+        } else {
+            self.memory.read_16(mem_address)
+        };
+
+        self.regs.pc = indirect_ref;
+    }
+
+    pub(crate) fn jsr(&mut self) {
+        self.stack_push_16(self.regs.pc + 2 - 1);
+        let target_address = self.memory.read_16(self.regs.pc);
+        self.regs.pc = target_address
+    }
 
     pub(crate) fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
@@ -203,14 +373,35 @@ impl CPU {
         self.regs.a = value;
         self.update_result_flags(self.regs.a);
     }
+     
+    pub(crate) fn ldx(&mut self, mode: &AddressingMode) {
+        let addr = self.get_op_addr(mode);
+        let value = self.memory.read(addr);
 
-    pub(crate) fn tax(&mut self) {
-        self.regs.x = self.regs.a;
+        self.regs.x = value;
         self.update_result_flags(self.regs.x);
     }
 
-    pub(crate) fn inx(&mut self) {
-        self.regs.x = self.regs.x.wrapping_add(1);
+    pub(crate) fn ldy(&mut self, mode: &AddressingMode) {
+        let addr = self.get_op_addr(mode);
+        let value = self.memory.read(addr);
+
+        self.regs.y = value;
+        self.update_result_flags(self.regs.y);
+    }
+
+
+
+
+
+
+
+
+
+
+
+    pub(crate) fn tax(&mut self) {
+        self.regs.x = self.regs.a;
         self.update_result_flags(self.regs.x);
     }
 

@@ -41,6 +41,28 @@ impl CPU {
                 0xD8 => self.cld(),
                 0x58 => self.cli(),
                 0xB8 => self.clv(),
+                0xC9 | 0xC5 | 0xD5 | 0xCD | 0xDD | 0xD9 | 0xC1 | 0xD1 => self.compare(&instruction.addr_mode, self.regs.a),
+                0xE0 | 0xE4 | 0xEC => self.compare(&instruction.addr_mode, self.regs.x),
+                0xC0 | 0xC4 | 0xCC => self.compare(&instruction.addr_mode, self.regs.y),
+                0xC6 | 0xD6 | 0xCE | 0xDE => self.dec(&instruction.addr_mode),
+                0xCA => self.dex(),
+                0x88 => self.dey(),
+                0x49 | 0x45 | 0x55 | 0x4D | 0x5D | 0x59 | 0x41 | 0x51 => self.eor(&instruction.addr_mode),
+                0xE6 | 0xF6 | 0xEE | 0xFE => self.inc(&instruction.addr_mode),
+                0xE8 => self.inx(),
+                0xC8 => self.iny(),
+                0x4C => self.jmp(),
+                0x6C => self.jmp_indirect(),
+                0x20 => self.jsr(),
+                0xA9 | 0xA5 | 0xB5 | 0xAD | 0xBD | 0xB9 | 0xA1 | 0xB1 => self.lda(&instruction.addr_mode),
+                0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => self.ldx(&instruction.addr_mode),
+                0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => self.ldy(&instruction.addr_mode),
+
+
+
+
+
+
 
 
 
@@ -60,20 +82,20 @@ impl CPU {
                     self.sta(&AddressingMode::ZeroPageX);
                     self.regs.pc += 1;
                 },
-                0xA5 => {
-                    self.lda(&AddressingMode::ZeroPage);
-                    self.regs.pc += 1;
-                },
-                0xA9 => {
-                    self.lda(&AddressingMode::Immediate);
-                    self.regs.pc += 1;
-                },
+                // 0xA5 => {
+                //     self.lda(&AddressingMode::ZeroPage);
+                //     self.regs.pc += 1;
+                // },
+                // 0xA9 => {
+                //     self.lda(&AddressingMode::Immediate);
+                //     self.regs.pc += 1;
+                // },
                 0xAA => self.tax(),
-                0xAD => {
-                    self.lda(&AddressingMode::Absolute);
-                    self.regs.pc += 2;
-                },
-                0xE8 =>self.inx(),
+                // 0xAD => {
+                //     self.lda(&AddressingMode::Absolute);
+                //     self.regs.pc += 2;
+                // },
+                // 0xE8 =>self.inx(),
                 _ => todo!()
             }
         }
