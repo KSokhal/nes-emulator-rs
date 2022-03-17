@@ -1,2 +1,9 @@
 /target
-/roms
+
+# Ignore all but test roms
+/roms/*
+!/roms/tests/
+
+# Ignore all logs except those used for testing
+/logs/*
+!/logs/nestest*.log

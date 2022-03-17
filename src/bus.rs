@@ -36,7 +36,8 @@ impl Memory for Bus {
             // PPU Registers
             0x2000 ..= 0x3FFF => {
                 let _mirror_down_addr = addr & 0b00100000_00000111;
-                todo!("PPU is not supported yet")
+                // todo!("PPU is not supported yet")
+                0
             }
             // PRG ROM Registers
             0x8000 ..= 0xFFFF => self.read_prg_rom(addr),

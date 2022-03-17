@@ -16,46 +16,47 @@ pub mod instructions;
 // pub mod memory;
 pub mod bus;
 pub mod cart;
+pub mod debug;
 
 fn main() {
 
-    // init sdl2
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
-    let window = video_subsystem
-        .window("Snake", (32.0 * 10.0) as u32, (32.0 * 10.0) as u32)
-        .position_centered()
-        .build().unwrap();
+    // // init sdl2
+    // let sdl_context = sdl2::init().unwrap();
+    // let video_subsystem = sdl_context.video().unwrap();
+    // let window = video_subsystem
+    //     .window("Snake", (32.0 * 10.0) as u32, (32.0 * 10.0) as u32)
+    //     .position_centered()
+    //     .build().unwrap();
 
-    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
-    let mut event_pump = sdl_context.event_pump().unwrap();
-    canvas.set_scale(10.0, 10.0).unwrap();
+    // let mut canvas = window.into_canvas().present_vsync().build().unwrap();
+    // let mut event_pump = sdl_context.event_pump().unwrap();
+    // canvas.set_scale(10.0, 10.0).unwrap();
 
-    let creator = canvas.texture_creator();
-    let mut texture = creator
-       .create_texture_target(PixelFormatEnum::RGB24, 32, 32).unwrap();
+    // let creator = canvas.texture_creator();
+    // let mut texture = creator
+    //    .create_texture_target(PixelFormatEnum::RGB24, 32, 32).unwrap();
 
-    let mut screen_state = [0 as u8; 32 * 3 * 32];
-    let mut rng = rand::thread_rng();
+    // let mut screen_state = [0 as u8; 32 * 3 * 32];
+    // let mut rng = rand::thread_rng();
 
     // let cart = Cart::new("roms/Super Mario Bros. (World).nes");
-    let cart = Cart::new("roms/snake.nes");
+    let cart = Cart::new("roms/tests/nestest.nes");
 
     let mut cpu = CPU::new(cart);
-
     cpu.reset();
+    cpu.regs.pc = 0xC000;
 
     cpu.run(|cpu| {
-        handle_user_input(cpu, &mut event_pump);
-        cpu.write(0xFE, rng.gen_range(1, 16));
+        // handle_user_input(cpu, &mut event_pump);
+        // cpu.write(0xFE, rng.gen_range(1, 16));
  
-        if read_screen_state(cpu, &mut screen_state) {
-            texture.update(None, &screen_state, 32 * 3).unwrap();
-            canvas.copy(&texture, None, None).unwrap();
-            canvas.present();
-        }
+        // if read_screen_state(cpu, &mut screen_state) {
+        //     texture.update(None, &screen_state, 32 * 3).unwrap();
+        //     canvas.copy(&texture, None, None).unwrap();
+        //     canvas.present();
+        // }
  
-        ::std::thread::sleep(std::time::Duration::new(0, 70_000));
+        // ::std::thread::sleep(std::time::Duration::new(0, 70_000));
     })
 }
 

@@ -304,7 +304,7 @@ impl CPU {
         let mut value = self.read(addr);
 
         let bit = get_bit(value, 7);
-        set_bit(&mut value, CARRY_FLAG_BYTE_POSITION, bit);
+        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, bit);
 
         value <<= 1;
         self.write(addr, value);
@@ -331,6 +331,10 @@ impl CPU {
         set_bit(&mut self.regs.p, ZERO_RESULT_FLAG_BYTE_POSITION, check == 0);
         set_bit(&mut self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION, get_bit(value, 7));
         set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, get_bit(value, 6));
+    }
+
+    pub(crate) fn bmi(&mut self) {
+        self.branch(get_bit(self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION));
     }
 
     pub(crate) fn bne(&mut self) {
@@ -391,9 +395,9 @@ impl CPU {
     }
 
     pub(crate) fn dey(&mut self) {
-        self.regs.x = self.regs.x.wrapping_sub(1);
+        self.regs.y = self.regs.y.wrapping_sub(1);
 
-        self.update_result_flags(self.regs.x);
+        self.update_result_flags(self.regs.y);
     }
 
     pub(crate) fn eor(&mut self, mode: &AddressingMode) {
@@ -486,7 +490,7 @@ impl CPU {
         let mut value = self.read(addr);
 
         let bit = get_bit(value, 0);
-        set_bit(&mut value, CARRY_FLAG_BYTE_POSITION, bit);
+        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, bit);
 
         value >>= 1;
         self.write(addr, value);
@@ -511,6 +515,7 @@ impl CPU {
 
     pub(crate) fn pla(&mut self) {
         self.regs.a = self.stack_pop();
+        self.update_result_flags(self.regs.a);
     }
 
     pub(crate) fn plp(&mut self) {

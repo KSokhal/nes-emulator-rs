@@ -5,12 +5,24 @@ use crate::instructions::STACK_RESET;
 use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
 use crate::lib::set_bit;
 
-pub(crate) struct CPU {
-    pub regs: Registers,
-    // pub memory: Memory,
-    pub bus: Bus,
+#[derive(Debug)]
+pub enum AddressingMode {
+   Immediate,
+   ZeroPage,
+   ZeroPageX,
+   ZeroPageY,
+   Absolute,
+   AbsoluteX,
+   AbsoluteY,
+   IndirectX,
+   IndirectY,
+   NoneAddressing,
 }
 
+pub(crate) struct CPU {
+    pub regs: Registers,
+    pub bus: Bus,
+}
 
 impl CPU {
     pub fn new (cart: Cart) -> Self {
@@ -20,20 +32,28 @@ impl CPU {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.regs.a = 0;
+        self.regs.x = 0;
+        self.regs.y = 0;
+        self.regs.sp = STACK_RESET;
+        self.regs.p = 0b100100;
+        self.regs.pc = 0;
+    }
+
     pub fn run<F>(&mut self, mut callback: F) 
     where 
         F: FnMut(&mut CPU),
     {
         // note: we move  intialization of program_counter from here to load function
         loop {
+            println!("{}", self.trace());
 
             let opscode = self.read(self.regs.pc);
             self.regs.pc += 1;
             let program_counter_state = self.regs.pc;
 
             let instruction = self.get_instruction(opscode);
-
-            println!("0x{:02X} 0x{:04X} {:?}", opscode, self.regs.pc, instruction.name);
             
             match opscode {
                 0x00 => return,
@@ -45,7 +65,7 @@ impl CPU {
                 0xB0 => self.bcs(),
                 0xF0 => self.beq(),
                 0x24 | 0x2C => self.bit(&instruction.addr_mode),
-                0x30 => self.beq(),
+                0x30 => self.bmi(),
                 0xD0 => self.bne(),
                 0x10 => self.bpl(),
                 0x50 => self.bvc(),
@@ -108,34 +128,7 @@ impl CPU {
 
         }
     }
-    
-    pub fn reset(&mut self) {
-        self.regs.a = 0;
-        self.regs.x = 0;
-        self.regs.y = 0;
-        self.regs.sp = STACK_RESET;
-        self.regs.p = 0b100100;
-        // self.memory = [0; 0xFFFF];
 
-        self.regs.pc = self.read_16(0xFFFC);
-    }
-}
-
-#[derive(Debug)]
-pub enum AddressingMode {
-   Immediate,
-   ZeroPage,
-   ZeroPageX,
-   ZeroPageY,
-   Absolute,
-   AbsoluteX,
-   AbsoluteY,
-   IndirectX,
-   IndirectY,
-   NoneAddressing,
-}
-
-impl CPU {
     pub(crate) fn get_op_addr(&self, mode: &AddressingMode) -> u16 {
         match mode {
             AddressingMode::Immediate => self.regs.pc,
@@ -182,7 +175,6 @@ impl CPU {
                 panic!("Addressing mode {:?} is not supported", mode);
             }
         }
- 
     }
 }
 
