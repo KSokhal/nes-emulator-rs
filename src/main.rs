@@ -17,6 +17,7 @@ pub mod instructions;
 pub mod bus;
 pub mod cart;
 pub mod debug;
+pub mod ppu;
 
 fn main() {
 
