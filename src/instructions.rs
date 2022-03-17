@@ -1,3 +1,4 @@
+use crate::bus::Memory;
 use crate::lib::{get_bit, set_bit};
 use crate::cpu::{CPU, AddressingMode};
 use crate::registers::{ZERO_RESULT_FLAG_BYTE_POSITION, NEGATIVE_RESULT_FLAG_BYTE_POSITION, CARRY_FLAG_BYTE_POSITION, OVERFLOW_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
@@ -212,7 +213,7 @@ impl CPU {
 
     fn branch(&mut self, condition: bool) {
         if condition {
-            let jump: i8 = self.memory.read(self.regs.pc) as i8;
+            let jump: i8 = self.read(self.regs.pc) as i8;
             let jump_addr = self.regs.pc.wrapping_add(1).wrapping_add(jump as u16);
 
             self.regs.pc = jump_addr;
@@ -255,11 +256,11 @@ impl CPU {
 
     fn stack_pop(&mut self) -> u8 {
         self.regs.sp = self.regs.sp.wrapping_add(1);
-        self.memory.read((STACK as u16) + self.regs.sp as u16)
+        self.read((STACK as u16) + self.regs.sp as u16)
     }
 
     fn stack_push(&mut self, data: u8) {
-        self.memory.write((STACK as u16) + self.regs.sp as u16, data);
+        self.write((STACK as u16) + self.regs.sp as u16, data);
         self.regs.sp = self.regs.sp.wrapping_sub(1)
     }
 
@@ -279,14 +280,14 @@ impl CPU {
 
     pub(crate) fn adc(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         self.add_to_accumulator(value);
     }
 
     pub(crate) fn and(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         self.regs.a &= value;
         self.update_result_flags(self.regs.a);
@@ -300,13 +301,13 @@ impl CPU {
 
     pub(crate) fn asl(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let mut value = self.memory.read(addr);
+        let mut value = self.read(addr);
 
         let bit = get_bit(value, 7);
         set_bit(&mut value, CARRY_FLAG_BYTE_POSITION, bit);
 
         value <<= 1;
-        self.memory.write(addr, value);
+        self.write(addr, value);
         self.update_result_flags(value);
     }
 
@@ -324,7 +325,7 @@ impl CPU {
 
     pub(crate) fn bit(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
         
         let check = self.regs.a & value;
         set_bit(&mut self.regs.p, ZERO_RESULT_FLAG_BYTE_POSITION, check == 0);
@@ -366,7 +367,7 @@ impl CPU {
 
     pub(crate) fn compare(&mut self, mode: &AddressingMode, compare_reg: u8) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, compare_reg >= value);
         let result = compare_reg.wrapping_sub(value);
@@ -375,10 +376,10 @@ impl CPU {
  
     pub(crate) fn dec(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
         let result = value.wrapping_sub(1);
 
-        self.memory.write(addr, result);
+        self.write(addr, result);
         
         self.update_result_flags(result);
     }
@@ -397,7 +398,7 @@ impl CPU {
 
     pub(crate) fn eor(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         self.regs.a ^= value;
         self.update_result_flags(self.regs.a);
@@ -405,12 +406,12 @@ impl CPU {
 
     pub(crate) fn inc(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
         let result = value.wrapping_add(1);
 
         self.update_result_flags(result);
 
-        self.memory.write(addr, result)
+        self.write(addr, result)
     }
 
     pub(crate) fn inx(&mut self) {
@@ -426,19 +427,19 @@ impl CPU {
     }
 
     pub(crate) fn jmp(&mut self) {
-        let mem_address = self.memory.read_16(self.regs.pc);
+        let mem_address = self.read_16(self.regs.pc);
         self.regs.pc = mem_address;
     }
 
     pub(crate) fn jmp_indirect(&mut self) {
-        let mem_address = self.memory.read_16(self.regs.pc);
+        let mem_address = self.read_16(self.regs.pc);
 
         let indirect_ref = if mem_address & 0x00FF == 0x00FF {
-            let lo = self.memory.read(mem_address);
-            let hi = self.memory.read(mem_address & 0xFF00);
+            let lo = self.read(mem_address);
+            let hi = self.read(mem_address & 0xFF00);
             (hi as u16) << 8 | (lo as u16)
         } else {
-            self.memory.read_16(mem_address)
+            self.read_16(mem_address)
         };
 
         self.regs.pc = indirect_ref;
@@ -446,13 +447,13 @@ impl CPU {
 
     pub(crate) fn jsr(&mut self) {
         self.stack_push_16(self.regs.pc + 2 - 1);
-        let target_address = self.memory.read_16(self.regs.pc);
+        let target_address = self.read_16(self.regs.pc);
         self.regs.pc = target_address
     }
 
     pub(crate) fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         self.regs.a = value;
         self.update_result_flags(self.regs.a);
@@ -460,7 +461,7 @@ impl CPU {
      
     pub(crate) fn ldx(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         self.regs.x = value;
         self.update_result_flags(self.regs.x);
@@ -468,7 +469,7 @@ impl CPU {
 
     pub(crate) fn ldy(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         self.regs.y = value;
         self.update_result_flags(self.regs.y);
@@ -482,19 +483,19 @@ impl CPU {
 
     pub(crate) fn lsr(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let mut value = self.memory.read(addr);
+        let mut value = self.read(addr);
 
         let bit = get_bit(value, 0);
         set_bit(&mut value, CARRY_FLAG_BYTE_POSITION, bit);
 
         value >>= 1;
-        self.memory.write(addr, value);
+        self.write(addr, value);
         self.update_result_flags(value);
     }
 
     pub(crate) fn ora(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         self.regs.a |= value;
         self.update_result_flags(self.regs.a);
@@ -526,14 +527,14 @@ impl CPU {
 
     pub(crate) fn rol(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let mut value = self.memory.read(addr);
+        let mut value = self.read(addr);
 
         let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
         set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(self.regs.a, 7));
         value <<= 1;
         set_bit(&mut value, 0, old_carry);
 
-        self.memory.write(addr, value);
+        self.write(addr, value);
         self.update_result_flags(value);
     }
 
@@ -547,14 +548,14 @@ impl CPU {
 
     pub(crate) fn ror(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let mut value = self.memory.read(addr);
+        let mut value = self.read(addr);
 
         let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
         set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(self.regs.a, 0));
         value >>= 1;
         set_bit(&mut value, 7, old_carry);
 
-        self.memory.write(addr, value);
+        self.write(addr, value);
         self.update_result_flags(value);
     }
 
@@ -569,7 +570,7 @@ impl CPU {
 
     pub(crate) fn sbc(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        let value = self.memory.read(addr);
+        let value = self.read(addr);
 
         // self.sub_from_accumulator(value);
         self.add_to_accumulator(((value as i8).wrapping_neg().wrapping_sub(1)) as u8);
@@ -577,17 +578,17 @@ impl CPU {
 
     pub(crate) fn sta(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        self.memory.write(addr, self.regs.a);
+        self.write(addr, self.regs.a);
     }
 
     pub(crate) fn stx(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        self.memory.write(addr, self.regs.x);
+        self.write(addr, self.regs.x);
     }
 
     pub(crate) fn sty(&mut self, mode: &AddressingMode) {
         let addr = self.get_op_addr(mode);
-        self.memory.write(addr, self.regs.y);
+        self.write(addr, self.regs.y);
     }
 
     pub(crate) fn tax(&mut self) {

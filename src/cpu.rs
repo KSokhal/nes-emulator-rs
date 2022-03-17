@@ -1,19 +1,23 @@
+use crate::bus::{Bus, Memory};
+use crate::cart::Cart;
 use crate::instructions::STACK_RESET;
-use crate::memory::Memory;
+// use crate::memory::Memory;
 use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
 use crate::lib::set_bit;
 
-#[derive(Default)]
 pub(crate) struct CPU {
     pub regs: Registers,
-    pub memory: Memory,
+    // pub memory: Memory,
+    pub bus: Bus,
 }
 
 
 impl CPU {
-    pub fn load(&mut self, program: Vec<u8>) {
-        self.memory.memory[0x0600..(0x0600 + program.len())].copy_from_slice(&program[..]);
-        self.memory.write_16(0xFFFC, 0x0600);
+    pub fn new (cart: Cart) -> Self {
+        CPU { 
+            regs: Registers::default(),
+            bus: Bus::new(cart),
+        }
     }
 
     pub fn run<F>(&mut self, mut callback: F) 
@@ -23,7 +27,7 @@ impl CPU {
         // note: we move  intialization of program_counter from here to load function
         loop {
 
-            let opscode = self.memory.read(self.regs.pc);
+            let opscode = self.read(self.regs.pc);
             self.regs.pc += 1;
             let program_counter_state = self.regs.pc;
 
@@ -113,7 +117,7 @@ impl CPU {
         self.regs.p = 0b100100;
         // self.memory = [0; 0xFFFF];
 
-        self.regs.pc = self.memory.read_16(0xFFFC);
+        self.regs.pc = self.read_16(0xFFFC);
     }
 }
 
@@ -135,41 +139,41 @@ impl CPU {
     pub(crate) fn get_op_addr(&self, mode: &AddressingMode) -> u16 {
         match mode {
             AddressingMode::Immediate => self.regs.pc,
-            AddressingMode::ZeroPage  => self.memory.read(self.regs.pc) as u16,
-            AddressingMode::Absolute => self.memory.read_16(self.regs.pc),
+            AddressingMode::ZeroPage  => self.read(self.regs.pc) as u16,
+            AddressingMode::Absolute => self.read_16(self.regs.pc),
             AddressingMode::ZeroPageX => {
-                let pos = self.memory.read(self.regs.pc);
+                let pos = self.read(self.regs.pc);
                 let addr = pos.wrapping_add(self.regs.x) as u16;
                 addr
             },
             AddressingMode::ZeroPageY => {
-                let pos = self.memory.read(self.regs.pc);
+                let pos = self.read(self.regs.pc);
                 let addr = pos.wrapping_add(self.regs.y) as u16;
                 addr
             },
             AddressingMode::AbsoluteX => {
-                let base = self.memory.read_16(self.regs.pc);
+                let base = self.read_16(self.regs.pc);
                 let addr = base.wrapping_add(self.regs.x as u16);
                 addr
             },
             AddressingMode::AbsoluteY => {
-                let base = self.memory.read_16(self.regs.pc);
+                let base = self.read_16(self.regs.pc);
                 let addr = base.wrapping_add(self.regs.y as u16);
                 addr
             },
             AddressingMode::IndirectX => {
-                let base = self.memory.read(self.regs.pc);
+                let base = self.read(self.regs.pc);
  
                 let ptr: u8 = (base as u8).wrapping_add(self.regs.x);
-                let lo = self.memory.read(ptr as u16);
-                let hi = self.memory.read(ptr.wrapping_add(1) as u16);
+                let lo = self.read(ptr as u16);
+                let hi = self.read(ptr.wrapping_add(1) as u16);
                 (hi as u16) << 8 | (lo as u16)
             },
             AddressingMode::IndirectY => {
-                let base = self.memory.read(self.regs.pc);
+                let base = self.read(self.regs.pc);
  
-                let lo = self.memory.read(base as u16);
-                let hi = self.memory.read((base as u8).wrapping_add(1) as u16);
+                let lo = self.read(base as u16);
+                let hi = self.read((base as u8).wrapping_add(1) as u16);
                 let deref_base = (hi as u16) << 8 | (lo as u16);
                 let deref = deref_base.wrapping_add(self.regs.y as u16);
                 deref
@@ -179,5 +183,27 @@ impl CPU {
             }
         }
  
+    }
+}
+
+impl Memory for CPU {
+    fn read(&self, addr: u16) -> u8 {
+        self.bus.read(addr)
+    }
+ 
+    fn write(&mut self, addr: u16, value: u8) {
+        self.bus.write(addr, value)
+    }
+
+    /*
+    NES CPU uses Little-Endian addressing rather than Big-Endian.
+    That means that the 8 least significant bits of an address will be stored before the 8 most significant bits.
+    */
+    fn read_16(&self, addr: u16) -> u16 {
+        self.bus.read_16(addr)
+    }
+
+    fn write_16(&mut self, addr: u16, value: u16) {
+        self.bus.write_16(addr, value)
     }
 }
