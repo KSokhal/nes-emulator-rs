@@ -1,7 +1,7 @@
 use crate::{cpu::{AddressingMode, CPU}, bus::Memory};
 
 impl CPU {
-    pub fn get_absolute_address(&self, mode: &AddressingMode, addr: u16) -> u16 {
+    pub fn get_absolute_address(&mut self, mode: &AddressingMode, addr: u16) -> u16 {
         match mode {
             AddressingMode::ZeroPage => self.read(addr) as u16,
 
@@ -54,7 +54,7 @@ impl CPU {
     }
 
 
-pub fn trace(self: &CPU) -> String {
+pub fn trace(self: &mut CPU) -> String {
 
     let code = self.read(self.regs.pc);
     let ops = self.get_instruction(code);
