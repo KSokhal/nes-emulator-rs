@@ -1,45 +1,4 @@
-use std::ops::Add;
-
-use crate::cart::Mirroring;
-
-const NAMETABLE1_FLAG_BYTE_POSITION: u8 = 0;
-const NAMETABLE2_FLAG_BYTE_POSITION: u8 = 1;
-const VRAM_ADD_INCREMENT_FLAG_BYTE_POSITION: u8 = 2;
-const SPRITE_PATTERN_ADDR_FLAG_BYTE_POSITION: u8 = 3;
-const BACKROUND_PATTERN_ADDR_FLAG_BYTE_POSITION: u8 = 4;
-const SPRITE_SIZE_FLAG_BYTE_POSITION: u8 = 5;
-const MASTER_SLAVE_SELECT_FLAG_BYTE_POSITION: u8 = 6;
-const GENERATE_NMI_FLAG_BYTE_POSITION: u8 = 7;
-
-pub struct PPU {
-    pub chr_rom: Vec<u8>,
-    pub palette_table: [u8; 32],
-    pub vram: [u8; 2048],
-    pub oam_data: [u8; 256],
-    pub mirroring: Mirroring,
-    pub addr: AddrRegister,
-}
-
-
-impl PPU {
-    pub fn new(chr_rom: Vec<u8>, mirroring: Mirroring) -> Self {
-        PPU {
-            chr_rom,
-            mirroring,
-            vram: [0; 2048],
-            oam_data: [0; 64 * 4],
-            palette_table: [0; 32],
-            addr: AddrRegister::default(),
-        }
-    }
-
-    fn write_to_ppu_addr(&mut self, value: u8) {
-        self.addr.update(value);
-    }
-}
-
-
-pub struct AddrRegister {
+pub(crate) struct AddrRegister {
     value: (u8, u8),
     hi_ptr: bool,
 }

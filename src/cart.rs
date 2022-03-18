@@ -17,7 +17,7 @@ pub struct RomHeader {
     prg_rom_size: usize,
     chr_rom_size: usize,
     mapper: u8,
-    screen_mirroring: Mirroring,    
+    pub screen_mirroring: Mirroring,    
 }
 
 impl RomHeader {

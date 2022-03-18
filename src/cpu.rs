@@ -168,7 +168,7 @@ impl CPU {
         }
     }
 
-    pub(crate) fn get_op_addr(&self, mode: &AddressingMode) -> u16 {
+    pub(crate) fn get_op_addr(&mut self, mode: &AddressingMode) -> u16 {
         match mode {
             AddressingMode::Immediate => self.regs.pc,
             AddressingMode::ZeroPage  => self.read(self.regs.pc) as u16,
@@ -218,7 +218,7 @@ impl CPU {
 }
 
 impl Memory for CPU {
-    fn read(&self, addr: u16) -> u8 {
+    fn read(&mut self, addr: u16) -> u8 {
         self.bus.read(addr)
     }
  
@@ -230,7 +230,7 @@ impl Memory for CPU {
     NES CPU uses Little-Endian addressing rather than Big-Endian.
     That means that the 8 least significant bits of an address will be stored before the 8 most significant bits.
     */
-    fn read_16(&self, addr: u16) -> u16 {
+    fn read_16(&mut self, addr: u16) -> u16 {
         self.bus.read_16(addr)
     }
 
