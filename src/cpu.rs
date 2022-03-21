@@ -137,7 +137,7 @@ impl CPU {
                 /* NOP read */
                 0x04 | 0x44 | 0x64 | 0x14 | 0x34 | 0x54 | 0x74 | 0xD4 | 0xF4 | 0x0C | 0x1C
                 | 0x3C | 0x5C | 0x7C | 0xdC | 0xFC => {
-                    let addr = self.get_op_addr(&instruction.addr_mode);
+                    let (addr, page_crossed) = self.get_op_addr(&instruction.addr_mode);
                     let value = self.read(addr);
                     /* do nothing */
                 },
@@ -159,6 +159,8 @@ impl CPU {
                 _ => todo!(),
             }
 
+            self.bus.tick(instruction.cycles);
+
             if program_counter_state == self.regs.pc {
                 self.regs.pc += (instruction.bytes - 1) as u16;
             }
@@ -168,30 +170,34 @@ impl CPU {
         }
     }
 
-    pub(crate) fn get_op_addr(&mut self, mode: &AddressingMode) -> u16 {
+    pub(crate) fn get_op_addr(&mut self, mode: &AddressingMode) -> (u16, bool) {
         match mode {
-            AddressingMode::Immediate => self.regs.pc,
-            AddressingMode::ZeroPage  => self.read(self.regs.pc) as u16,
-            AddressingMode::Absolute => self.read_16(self.regs.pc),
+            AddressingMode::Immediate => (self.regs.pc, false),
+            AddressingMode::ZeroPage  => (self.read(self.regs.pc) as u16, false),
+            AddressingMode::Absolute => (self.read_16(self.regs.pc), false),
             AddressingMode::ZeroPageX => {
                 let pos = self.read(self.regs.pc);
                 let addr = pos.wrapping_add(self.regs.x) as u16;
-                addr
+                (addr, false)
             },
             AddressingMode::ZeroPageY => {
                 let pos = self.read(self.regs.pc);
                 let addr = pos.wrapping_add(self.regs.y) as u16;
-                addr
+                (addr, false)
             },
             AddressingMode::AbsoluteX => {
                 let base = self.read_16(self.regs.pc);
                 let addr = base.wrapping_add(self.regs.x as u16);
-                addr
+
+                let page_crossed = base & 0xFF00 != addr & 0xFF00;
+                (addr, page_crossed)
             },
             AddressingMode::AbsoluteY => {
                 let base = self.read_16(self.regs.pc);
                 let addr = base.wrapping_add(self.regs.y as u16);
-                addr
+
+                let page_crossed = base & 0xFF00 != addr & 0xFF00;
+                (addr, page_crossed)
             },
             AddressingMode::IndirectX => {
                 let base = self.read(self.regs.pc);
@@ -199,7 +205,7 @@ impl CPU {
                 let ptr: u8 = (base as u8).wrapping_add(self.regs.x);
                 let lo = self.read(ptr as u16);
                 let hi = self.read(ptr.wrapping_add(1) as u16);
-                (hi as u16) << 8 | (lo as u16)
+                ((hi as u16) << 8 | (lo as u16), false)
             },
             AddressingMode::IndirectY => {
                 let base = self.read(self.regs.pc);
@@ -208,7 +214,9 @@ impl CPU {
                 let hi = self.read((base as u8).wrapping_add(1) as u16);
                 let deref_base = (hi as u16) << 8 | (lo as u16);
                 let deref = deref_base.wrapping_add(self.regs.y as u16);
-                deref
+
+                let page_crossed = deref & 0xFF00 != deref_base & 0xFF00;
+                (deref, page_crossed)
             },
             AddressingMode::NoneAddressing => {
                 panic!("Addressing mode {:?} is not supported", mode);

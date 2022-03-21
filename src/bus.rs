@@ -15,6 +15,7 @@ pub struct Bus {
     vram: [u8; 2048],
     prg_rom: Vec<u8>,
     ppu: PPU,
+    cycles: usize
  }
  
 impl Bus {
@@ -24,7 +25,8 @@ impl Bus {
         Bus {
             vram: [0; 2048],
             prg_rom: cart.prg_rom,
-            ppu,            
+            ppu,
+            cycles: 0,            
         }
     }
 
@@ -37,6 +39,11 @@ impl Bus {
         self.prg_rom[addr as usize]
     }
 
+    pub(crate) fn tick(&mut self, cycles: u8) {
+        self.cycles += cycles as usize;
+        // Cycles multiplied by 3 since the PPU clock runs 3 time faster than CPU clock
+        let _ = self.ppu.tick(cycles * 3);
+    }
 }
 
 impl Memory for Bus {

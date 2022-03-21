@@ -7,8 +7,7 @@ pub struct Instruction {
     pub addr_mode: AddressingMode,
     pub name: &'static str,
     pub bytes: u8,
-    #[allow(dead_code)]
-    cycles: u8,
+    pub cycles: u8,
 }
 
 const STACK: u16 = 0x0100;
@@ -345,8 +344,14 @@ impl CPU {
 
     fn branch(&mut self, condition: bool) {
         if condition {
+            self.bus.tick(1);
+
             let jump: i8 = self.read(self.regs.pc) as i8;
             let jump_addr = self.regs.pc.wrapping_add(1).wrapping_add(jump as u16);
+
+            if self.regs.pc.wrapping_add(1) & 0xFF00 != jump_addr & 0xFF00 {
+                self.bus.tick(1);
+            }
 
             self.regs.pc = jump_addr;
         }
@@ -411,15 +416,23 @@ impl CPU {
     }
 
     pub(crate) fn adc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        }
 
         self.add_to_accumulator(value);
     }
 
     pub(crate) fn and(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        }
 
         self.regs.a &= value;
         self.update_result_flags(self.regs.a);
@@ -432,7 +445,7 @@ impl CPU {
     }
 
     pub(crate) fn asl(&mut self, mode: &AddressingMode) -> u8 {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let mut value = self.read(addr);
 
         let bit = get_bit(value, 7);
@@ -457,7 +470,7 @@ impl CPU {
     }
 
     pub(crate) fn bit(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
         
         let check = self.regs.a & value;
@@ -503,8 +516,12 @@ impl CPU {
     }
 
     pub(crate) fn compare(&mut self, mode: &AddressingMode, compare_reg: u8) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        };
 
         set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, compare_reg >= value);
         let result = compare_reg.wrapping_sub(value);
@@ -512,7 +529,7 @@ impl CPU {
     }
  
     pub(crate) fn dec(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
         let result = value.wrapping_sub(1);
 
@@ -534,15 +551,19 @@ impl CPU {
     }
 
     pub(crate) fn eor(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        };
 
         self.regs.a ^= value;
         self.update_result_flags(self.regs.a);
     }
 
     pub(crate) fn inc(&mut self, mode: &AddressingMode) -> u8 {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
         let result = value.wrapping_add(1);
 
@@ -590,24 +611,36 @@ impl CPU {
     }
 
     pub(crate) fn lda(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        };
 
         self.regs.a = value;
         self.update_result_flags(self.regs.a);
     }
      
     pub(crate) fn ldx(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        };
 
         self.regs.x = value;
         self.update_result_flags(self.regs.x);
     }
 
     pub(crate) fn ldy(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        };
 
         self.regs.y = value;
         self.update_result_flags(self.regs.y);
@@ -620,7 +653,7 @@ impl CPU {
     }
 
     pub(crate) fn lsr(&mut self, mode: &AddressingMode) -> u8 {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let mut value = self.read(addr);
 
         let bit = get_bit(value, 0);
@@ -633,8 +666,12 @@ impl CPU {
     }
 
     pub(crate) fn ora(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        };
 
         self.regs.a |= value;
         self.update_result_flags(self.regs.a);
@@ -666,7 +703,7 @@ impl CPU {
     }
 
     pub(crate) fn rol(&mut self, mode: &AddressingMode) -> u8 {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let mut value = self.read(addr);
 
         let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
@@ -688,7 +725,7 @@ impl CPU {
     }
 
     pub(crate) fn ror(&mut self, mode: &AddressingMode) -> u8 {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let mut value = self.read(addr);
 
         let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
@@ -711,25 +748,29 @@ impl CPU {
     }
 
     pub(crate) fn sbc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
+
+        if page_crossed {
+            self.bus.tick(1);
+        };
 
         // self.sub_from_accumulator(value);
         self.add_to_accumulator(((value as i8).wrapping_neg().wrapping_sub(1)) as u8);
     }
 
     pub(crate) fn sta(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         self.write(addr, self.regs.a);
     }
 
     pub(crate) fn stx(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         self.write(addr, self.regs.x);
     }
 
     pub(crate) fn sty(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         self.write(addr, self.regs.y);
     }
 
@@ -763,7 +804,7 @@ impl CPU {
     }
 
     pub(crate) fn dcp(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let mut value = self.read(addr);
 
         value = value.wrapping_sub(1);
@@ -795,7 +836,7 @@ impl CPU {
     }
 
     pub(crate) fn axs(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         let x_and_a = self.regs.x & self.regs.a;
@@ -811,7 +852,7 @@ impl CPU {
     }
 
     pub(crate) fn arr(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         self.regs.a &= value;
@@ -831,14 +872,14 @@ impl CPU {
     }
 
     pub(crate) fn sbc_unofficial(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         self.add_to_accumulator(((value as i8).wrapping_neg().wrapping_sub(1)) as u8);
     }
 
     pub(crate) fn anc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         self.regs.a &= value;
@@ -849,7 +890,7 @@ impl CPU {
     }
 
     pub(crate) fn alr(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         self.regs.a &= value;
@@ -871,7 +912,7 @@ impl CPU {
     }
 
     pub(crate) fn lax(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         self.regs.a = value;
@@ -880,7 +921,7 @@ impl CPU {
     }
 
     pub(crate) fn sax(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.regs.a & self.regs.x;
 
         self.write(addr, value);
@@ -892,7 +933,7 @@ impl CPU {
     }
 
     pub(crate) fn xaa(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         self.regs.a = self.regs.x;
@@ -903,7 +944,7 @@ impl CPU {
     }
 
     pub(crate) fn las(&mut self, mode: &AddressingMode) {
-        let addr = self.get_op_addr(mode);
+        let (addr, page_crossed) = self.get_op_addr(mode);
         let value = self.read(addr);
 
         let result = value & self.regs.sp;
