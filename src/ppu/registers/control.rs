@@ -10,6 +10,7 @@ use crate::ppu::PPU;
 // const MASTER_SLAVE_SELECT_FLAG_BYTE_POSITION: u8 = 6;
 // const GENERATE_NMI_FLAG_BYTE_POSITION: u8 = 7;
 
+#[allow(dead_code)]
 enum PPUControlFlags {
     Nametable1 = 0,
     Nametable2 = 1,

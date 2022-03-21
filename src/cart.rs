@@ -17,6 +17,7 @@ pub struct RomHeader {
     chr_rom_start: usize,
     prg_rom_size: usize,
     chr_rom_size: usize,
+    #[allow(dead_code)]
     mapper: u8,
     pub screen_mirroring: Mirroring,    
 }

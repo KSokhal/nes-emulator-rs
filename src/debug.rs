@@ -1,5 +1,6 @@
 use crate::{cpu::{AddressingMode, CPU}, bus::Memory};
 
+#[allow(dead_code)]
 impl<'a> CPU<'a> {
     pub fn get_absolute_address(&mut self, mode: &AddressingMode, addr: u16) -> (u16, bool) {
         match mode {

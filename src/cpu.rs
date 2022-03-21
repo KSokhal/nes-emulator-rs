@@ -1,7 +1,5 @@
-use crate::bus::{Bus, Memory, self};
-use crate::cart::Cart;
+use crate::bus::{Bus, Memory};
 use crate::instructions::STACK_RESET;
-// use crate::memory::Memory;
 use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, BREAK_FLAG_BYTE_POSITION, BREAK2_FLAG_BYTE_POSITION};
 use crate::lib::set_bit;
 
@@ -142,7 +140,7 @@ impl CPU<'_> {
                 0x04 | 0x44 | 0x64 | 0x14 | 0x34 | 0x54 | 0x74 | 0xD4 | 0xF4 | 0x0C | 0x1C
                 | 0x3C | 0x5C | 0x7C | 0xdC | 0xFC => {
                     let (addr, page_crossed) = self.get_op_addr(&instruction.addr_mode);
-                    let value = self.read(addr);
+                    let _value = self.read(addr);
 
                     if page_crossed {
                         self.bus.tick(1);
@@ -158,7 +156,7 @@ impl CPU<'_> {
                 0x87 | 0x97 | 0x8F | 0x83 => self.sax(&instruction.addr_mode),
                 0xAB => self.lxa(&instruction.addr_mode),
                 0x8B => self.xaa(&instruction.addr_mode),
-                0xBB => self.xaa(&instruction.addr_mode),
+                0xBB => self.las(&instruction.addr_mode),
                 0x9B => self.tas(),
                 0x93 => self.ahx_indir_y(),
                 0x9F => self.ahx_abs_y(),

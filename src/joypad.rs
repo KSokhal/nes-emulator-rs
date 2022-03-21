@@ -12,14 +12,14 @@ pub enum Inputs {
     A,
 }
 
-const RIGHT_FLAG_BYTE_POSITION: u8 = 7;
-const LEFT_FLAG_BYTE_POSITION: u8 = 6;
-const DOWN_FLAG_BYTE_POSITION: u8 = 5;
-const UP_FLAG_BYTE_POSITION: u8 = 4;
-const START_FLAG_BYTE_POSITION: u8 = 3;
-const SELECT_FLAG_BYTE_POSITION: u8 = 2;
-const BUTTON_B_FLAG_BYTE_POSITION: u8 = 1;
-const BUTTON_A_FLAG_BYTE_POSITION: u8 = 0;
+// const RIGHT_FLAG_BYTE_POSITION: u8 = 7;
+// const LEFT_FLAG_BYTE_POSITION: u8 = 6;
+// const DOWN_FLAG_BYTE_POSITION: u8 = 5;
+// const UP_FLAG_BYTE_POSITION: u8 = 4;
+// const START_FLAG_BYTE_POSITION: u8 = 3;
+// const SELECT_FLAG_BYTE_POSITION: u8 = 2;
+// const BUTTON_B_FLAG_BYTE_POSITION: u8 = 1;
+// const BUTTON_A_FLAG_BYTE_POSITION: u8 = 0;
 
 
 pub struct Joypad {
