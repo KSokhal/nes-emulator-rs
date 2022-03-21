@@ -40,8 +40,8 @@ fn main() {
     let creator = canvas.texture_creator();
     let mut texture = creator.create_texture_target(
         PixelFormatEnum::RGB24, 
-    (WINDOW_WIDTH * 2) as u32,
-        WINDOW_HEIGHT as u32
+    (WINDOW_WIDTH) as u32,
+        (WINDOW_HEIGHT) as u32
     ).unwrap();
 
     let key_map = HashMap::from([
