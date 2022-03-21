@@ -1,3 +1,4 @@
+use crate::{WINDOW_WIDTH, WINDOW_HEIGHT};
 use crate::cart::Mirroring;
 use crate::ppu::PPU;
 
@@ -22,8 +23,8 @@ pub struct Frame {
 }
  
 impl Frame {
-    const WIDTH: usize = 256 * 2;
-    const HIGHT: usize = 240 ;
+    const WIDTH: usize = WINDOW_WIDTH * 2;
+    const HIGHT: usize = WINDOW_HEIGHT;
 
     pub fn new() -> Self {
         Frame {
@@ -40,37 +41,6 @@ impl Frame {
         }
     }
 }
-
-fn show_tile(chr_rom: &Vec<u8>, bank: usize, tile_n: usize) ->Frame {
-    assert!(bank <= 1);
-
-    let mut frame = Frame::new();
-    let bank = (bank * 0x1000) as usize;
-
-    let tile = &chr_rom[(bank + tile_n * 16)..=(bank + tile_n * 16 + 15)];
-
-    for y in 0..=7 {
-        let mut upper = tile[y];
-        let mut lower = tile[y + 8];
-
-        for x in (0..=7).rev() {
-            let value = (1 & upper) << 1 | (1 & lower);
-            upper = upper >> 1;
-            lower = lower >> 1;
-            let rgb = match value {
-                0 => SYSTEM_PALLETE[0x01],
-                1 => SYSTEM_PALLETE[0x23],
-                2 => SYSTEM_PALLETE[0x27],
-                3 => SYSTEM_PALLETE[0x30],
-                _ => panic!("Invalid Colour"),
-            };
-            frame.set_pixel(x, y, rgb)
-        }
-    }
-
-    frame
-}
-
 
 fn bg_pallette(ppu: &PPU, attribute_table: &[u8], tile_column: usize, tile_row: usize) -> [u8; 4] {
     let attr_table_idx = tile_row / 4 * 8 + tile_column / 4;
@@ -112,20 +82,20 @@ pub fn render(ppu: &PPU, frame: &mut Frame) {
 
     render_name_table(ppu, frame, 
         main_nametable, 
-        Rect::new(scroll_x, scroll_y, 256, 240 ),
+        Rect::new(scroll_x, scroll_y, WINDOW_WIDTH, WINDOW_HEIGHT ),
         -(scroll_x as isize), -(scroll_y as isize)
     );
     if scroll_x > 0 {
         render_name_table(ppu, frame, 
             second_nametable, 
-            Rect::new(0, 0, scroll_x, 240),
-            (256 - scroll_x) as isize, 0
+            Rect::new(0, 0, scroll_x, WINDOW_HEIGHT),
+            (WINDOW_WIDTH - scroll_x) as isize, 0
         );
     } else if scroll_y > 0 {
         render_name_table(ppu, frame, 
             second_nametable, 
-            Rect::new(0, 0, 256, scroll_y),
-            0, (240 - scroll_y) as isize
+            Rect::new(0, 0, WINDOW_WIDTH, scroll_y),
+            0, (WINDOW_HEIGHT - scroll_y) as isize
         );
     }
 

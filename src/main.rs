@@ -21,11 +21,15 @@ pub mod joypad;
 pub mod rendering;
 
 
+const WINDOW_WIDTH: usize = 256;
+const WINDOW_HEIGHT: usize = 240;
+
 fn main() {
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem
-        .window("Tile viewer", (256.0 * 4.0) as u32, (240.0 * 2.0) as u32)
+        .window("Tile viewer", (WINDOW_WIDTH * 2) as u32, (WINDOW_HEIGHT * 2) as u32)
         .position_centered()
         .build().unwrap();
 
@@ -34,7 +38,11 @@ fn main() {
     canvas.set_scale(2.0, 2.0).unwrap();
 
     let creator = canvas.texture_creator();
-    let mut texture = creator.create_texture_target(PixelFormatEnum::RGB24, 256 * 2, 240).unwrap();
+    let mut texture = creator.create_texture_target(
+        PixelFormatEnum::RGB24, 
+    (WINDOW_WIDTH * 2) as u32,
+        WINDOW_HEIGHT as u32
+    ).unwrap();
 
     let key_map = HashMap::from([
         (Keycode::A, Inputs::A),
