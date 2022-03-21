@@ -187,8 +187,7 @@ impl Rect {
     }
 }
 
-fn render_name_table(ppu: &PPU, frame: &mut Frame, name_table: &[u8], 
-    view_port: Rect, shift_x: isize, shift_y: isize) {
+fn render_name_table(ppu: &PPU, frame: &mut Frame, name_table: &[u8], view_port: Rect, shift_x: isize, shift_y: isize) {
     let bank = ppu.bknd_pattern_addr();
 
     let attribute_table = &name_table[0x3c0.. 0x400];
