@@ -55,14 +55,14 @@ impl Bus<'_>{
         // Cycles multiplied by 3 since the PPU clock runs 3 time faster than CPU clock
         self.ppu.tick(cycles * 3);
         let nmi_after = self.ppu.nmi_interrupt.is_some();
-
+        // panic!();
         if !nmi_before && nmi_after {
             (self.gameloop_callback)(&self.ppu, &mut self.joypad);
         }
     }
 
     pub fn poll_nmi_status(&mut self) -> Option<u8> {
-        self.ppu.nmi_interrupt.take()
+        self.ppu.poll_nmi_interrupt()
     }
 }
 
@@ -76,8 +76,8 @@ impl Memory for Bus<'_> {
             }
             // PPU Registers
             0x2000 | 0x2001 | 0x2003 | 0x2005 | 0x2006 | 0x4014 => {
-                panic!("Attempt to read from write-only PPU address {:x}", addr);
-                // 0
+                // panic!("Attempt to read from write-only PPU address {:x}", addr);
+                0
             }
             0x2002 => self.ppu.read_status(),
             0x2004 => self.ppu.read_oam_data(),
@@ -86,12 +86,15 @@ impl Memory for Bus<'_> {
                 let mirror_down_addr = addr & 0b00100000_00000111;
                 self.read(mirror_down_addr)
             },
+            // APU
+            0x4000 ..= 0x4015 => 0, // Ignore APU
             // Joypad Controller
             0x4016 => self.joypad.read(),
+            0x4017 => 0, // Second joypad
             // PRG ROM Registers
             0x8000 ..= 0xFFFF => self.read_prg_rom(addr),
             _ => {
-                println!("Ignoring mem access at {}", addr);
+                println!("Ignoring mem access at 0x{:X}", addr);
                 0
             }
         }
@@ -118,14 +121,26 @@ impl Memory for Bus<'_> {
                 self.write(mirror_down_addr, value);
                 // todo!("PPU is not supported yet");
             },
-            // Joypad Controller
+            // APU
+            0x4000 ..= 0x4013 | 0x4015 => return,
+            0x4014 => {
+                let mut buffer: [u8; 256] = [0; 256];
+                let hi: u16 = (value as u16) << 8;
+                for i in 0..256u16 {
+                    buffer[i as usize] = self.read(hi + i);
+                }
+
+                self.ppu.write_oam_dma(&buffer);
+            }
+            // Joypad Controllers
             0x4016 => self.joypad.write(value),
+            0x4017 =>  { /* Second joypad */ },
             // PRG ROM Registers
             0x8000 ..= 0xFFFF => {
                 panic!("Attempt to write to Cartridge ROM space")
             }
             _ => {
-                println!("Ignoring mem write-access at {}", addr);
+                println!("Ignoring mem write-access at 0x{:X}", addr);
             }
         }
     }

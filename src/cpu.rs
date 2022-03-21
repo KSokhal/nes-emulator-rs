@@ -38,20 +38,20 @@ impl CPU<'_> {
         self.regs.y = 0;
         self.regs.sp = STACK_RESET;
         self.regs.p = 0b100100;
-        self.regs.pc = 0;
+        self.regs.pc = self.read_16(0xFFFC);
     }
 
     pub fn run<F>(&mut self, mut callback: F) 
     where 
         F: FnMut(&mut CPU),
     {
-        // note: we move  intialization of program_counter from here to load function
         loop {
-            println!("{}", self.trace());
-
             if let Some(_nmi) = self.bus.poll_nmi_status() {
                 self.interrupt_nmi();
             };
+
+            // println!("{}", self.trace());
+            callback(self);
 
             let opscode = self.read(self.regs.pc);
             self.regs.pc += 1;
@@ -143,6 +143,10 @@ impl CPU<'_> {
                 | 0x3C | 0x5C | 0x7C | 0xdC | 0xFC => {
                     let (addr, page_crossed) = self.get_op_addr(&instruction.addr_mode);
                     let value = self.read(addr);
+
+                    if page_crossed {
+                        self.bus.tick(1);
+                    }
                     /* do nothing */
                 },
 
@@ -160,7 +164,6 @@ impl CPU<'_> {
                 0x9F => self.ahx_abs_y(),
                 0x9E => self.shx(),
                 0x9C => self.shy(),
-                _ => todo!(),
             }
 
             self.bus.tick(instruction.cycles);
@@ -168,9 +171,6 @@ impl CPU<'_> {
             if program_counter_state == self.regs.pc {
                 self.regs.pc += (instruction.bytes - 1) as u16;
             }
-
-            callback(self);
-
         }
     }
 
@@ -239,7 +239,7 @@ impl CPU<'_> {
         set_bit(&mut self.regs.p, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, true);
  
         self.bus.tick(2);
-        self.regs.pc = self.bus.read_16(0xFFFA);
+        self.regs.pc = self.read_16(0xFFFA);
     }
 }
 

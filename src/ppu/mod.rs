@@ -110,7 +110,7 @@ impl PPU {
         let addr = self.addr.get();
         match addr {
             0 ..= 0x1FFF => println!("attempt to write to chr rom space {}", addr), 
-            0x2000..=0x2FFF => {
+            0x2000 ..= 0x2FFF => {
                 self.vram[self.mirror_vram_addr(addr) as usize] = value;
             }
             0x3000 ..= 0x3EFF => unimplemented!("addr {} shouldn't be used in reallity", addr),
@@ -161,7 +161,7 @@ impl PPU {
         }
     }
 
-    fn write_oam_dma(&mut self, data: &[u8; 256]) {
+    pub(crate) fn write_oam_dma(&mut self, data: &[u8; 256]) {
         for x in data.iter() {
             self.oam_data[self.oam_addr as usize] = *x;
             self.oam_addr = self.oam_addr.wrapping_add(1);
@@ -172,22 +172,39 @@ impl PPU {
         self.cycles += cycles as usize;
         // Scanlines last for 341 PPU clock cycles
         if self.cycles >= 341 {
+            if self.is_sprite_0_hit(self.cycles) {
+                self.set_sprite_zero_hit(true);
+            }
+
             self.cycles = self.cycles - 341;
             self.scanline += 1;
 
             if self.scanline == 241 {
+                self.set_vblank_status(true);
+                self.set_sprite_zero_hit(false);
                 if self.generate_vblank_nmi() {
-                    self.set_vblank_status(true);
-                    todo!("Should trigger NMI interrupt")
+                    self.nmi_interrupt = Some(1);
                 }
             }
 
             if self.scanline >= 262 {
                 self.scanline = 0;
+                self.nmi_interrupt = None;
+                self.set_sprite_zero_hit(false);
                 self.reset_vblank_status();
                 return true;
             }
         }
         return false;
+    }
+
+    fn is_sprite_0_hit(&self, cycle: usize) -> bool {
+        let y = self.oam_data[0] as usize;
+        let x = self.oam_data[3] as usize;
+        (y == self.scanline as usize) && x <= cycle && self.show_sprites()
+    }
+
+    pub(crate) fn poll_nmi_interrupt(&mut self) -> Option<u8> {
+        self.nmi_interrupt.take()
     }
 }
