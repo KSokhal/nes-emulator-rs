@@ -5,7 +5,7 @@ use registers::addr::AddrRegister;
 use self::registers::scroll::ScrollRegister;
 pub mod registers;
 
-pub(crate) struct PPU {
+pub struct PPU {
     pub chr_rom: Vec<u8>,
     pub mirroring: Mirroring,
     pub ctrl: u8,
@@ -22,6 +22,8 @@ pub(crate) struct PPU {
     internal_data_buffer: u8,
     scanline: u16,
     cycles: usize,
+
+    pub nmi_interrupt: Option<u8>, 
 }
 
 
@@ -42,6 +44,7 @@ impl PPU {
             oam_addr: 0,
             scanline: 0,
             cycles: 0,
+            nmi_interrupt: None,
         }
     }
 
@@ -65,6 +68,9 @@ impl PPU {
     pub(crate) fn write_to_ctrl(&mut self, value: u8) {
         let before_nmi_status = self.generate_vblank_nmi();
         self.ctrl = value;
+        if !before_nmi_status && self.generate_vblank_nmi() && self.is_in_vblank() {
+            self.nmi_interrupt = Some(1);
+        }
     }
 
     pub(crate) fn write_to_mask(&mut self, value: u8) {

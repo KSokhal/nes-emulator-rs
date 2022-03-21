@@ -13,7 +13,7 @@ pub struct Instruction {
 const STACK: u16 = 0x0100;
 pub(crate) const STACK_RESET: u8 = 0xfd;
 
-impl CPU {
+impl CPU<'_> {
     pub(crate) fn get_instruction(&self, opcode: u8) -> Instruction {
         match opcode {
             0x69 => Instruction { addr_mode: AddressingMode::Immediate, name: "ADC", bytes: 2, cycles: 2 },
@@ -396,12 +396,12 @@ impl CPU {
         self.read((STACK as u16) + self.regs.sp as u16)
     }
 
-    fn stack_push(&mut self, data: u8) {
+    pub fn stack_push(&mut self, data: u8) {
         self.write((STACK as u16) + self.regs.sp as u16, data);
         self.regs.sp = self.regs.sp.wrapping_sub(1)
     }
 
-    fn stack_push_16(&mut self, data: u16) {
+    pub fn stack_push_16(&mut self, data: u16) {
         let hi = (data >> 8) as u8;
         let lo = (data & 0xff) as u8;
         self.stack_push(hi);

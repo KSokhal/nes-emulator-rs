@@ -1,8 +1,8 @@
-use crate::bus::{Bus, Memory};
+use crate::bus::{Bus, Memory, self};
 use crate::cart::Cart;
 use crate::instructions::STACK_RESET;
 // use crate::memory::Memory;
-use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
+use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, BREAK_FLAG_BYTE_POSITION, BREAK2_FLAG_BYTE_POSITION};
 use crate::lib::set_bit;
 
 #[derive(Debug)]
@@ -19,16 +19,16 @@ pub enum AddressingMode {
    NoneAddressing,
 }
 
-pub(crate) struct CPU {
+pub(crate) struct CPU<'a> {
     pub regs: Registers,
-    pub bus: Bus,
+    pub bus: Bus<'a>,
 }
 
-impl CPU {
-    pub fn new (cart: Cart) -> Self {
+impl CPU<'_> {
+    pub fn new<'b>(bus: Bus<'b>) -> CPU<'b> {
         CPU { 
             regs: Registers::default(),
-            bus: Bus::new(cart),
+            bus
         }
     }
 
@@ -48,6 +48,10 @@ impl CPU {
         // note: we move  intialization of program_counter from here to load function
         loop {
             println!("{}", self.trace());
+
+            if let Some(_nmi) = self.bus.poll_nmi_status() {
+                self.interrupt_nmi();
+            };
 
             let opscode = self.read(self.regs.pc);
             self.regs.pc += 1;
@@ -223,9 +227,23 @@ impl CPU {
             }
         }
     }
+
+    fn interrupt_nmi(&mut self) {
+        self.stack_push_16(self.regs.pc);
+        let mut flag = self.regs.p.clone();
+
+        set_bit(&mut flag, BREAK_FLAG_BYTE_POSITION, false);
+        set_bit(&mut flag, BREAK2_FLAG_BYTE_POSITION, true);
+ 
+        self.stack_push(flag);
+        set_bit(&mut self.regs.p, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, true);
+ 
+        self.bus.tick(2);
+        self.regs.pc = self.bus.read_16(0xFFFA);
+    }
 }
 
-impl Memory for CPU {
+impl Memory for CPU<'_> {
     fn read(&mut self, addr: u16) -> u8 {
         self.bus.read(addr)
     }

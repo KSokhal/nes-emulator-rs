@@ -1,4 +1,4 @@
-use crate::{cart::Cart, ppu::PPU};
+use crate::{cart::Cart, ppu::PPU, joypad::Joypad};
 
 pub(crate) trait Memory {
     fn read(&mut self, addr: u16) -> u8;
@@ -11,22 +11,31 @@ pub(crate) trait Memory {
 }
 
 
-pub struct Bus {
+pub struct Bus<'call> {
     vram: [u8; 2048],
     prg_rom: Vec<u8>,
     ppu: PPU,
-    cycles: usize
+    joypad: Joypad,
+    cycles: usize,
+
+    gameloop_callback: Box<dyn FnMut(&PPU, &mut Joypad) + 'call>,
  }
  
-impl Bus {
-    pub(crate) fn new(cart: Cart) -> Self {
+impl Bus<'_>{
+
+    pub(crate) fn new<'call, F>(cart: Cart, gameloop_callback: F) -> Bus<'call> 
+    where
+        F: FnMut(&PPU, &mut Joypad) + 'call,
+    {
         let ppu = PPU::new(cart.chr_rom, cart.rom_header.screen_mirroring);
 
         Bus {
             vram: [0; 2048],
             prg_rom: cart.prg_rom,
             ppu,
-            cycles: 0,            
+            cycles: 0,
+            gameloop_callback: Box::from(gameloop_callback),
+            joypad: Joypad::new(),            
         }
     }
 
@@ -41,12 +50,23 @@ impl Bus {
 
     pub(crate) fn tick(&mut self, cycles: u8) {
         self.cycles += cycles as usize;
+
+        let nmi_before = self.ppu.nmi_interrupt.is_some();
         // Cycles multiplied by 3 since the PPU clock runs 3 time faster than CPU clock
-        let _ = self.ppu.tick(cycles * 3);
+        self.ppu.tick(cycles * 3);
+        let nmi_after = self.ppu.nmi_interrupt.is_some();
+
+        if !nmi_before && nmi_after {
+            (self.gameloop_callback)(&self.ppu, &mut self.joypad);
+        }
+    }
+
+    pub fn poll_nmi_status(&mut self) -> Option<u8> {
+        self.ppu.nmi_interrupt.take()
     }
 }
 
-impl Memory for Bus {
+impl Memory for Bus<'_> {
     fn read(&mut self, addr: u16) -> u8 {
         match addr {
             // RAM Registers
@@ -65,7 +85,9 @@ impl Memory for Bus {
             0x2008 ..= 0x3FFF => {
                 let mirror_down_addr = addr & 0b00100000_00000111;
                 self.read(mirror_down_addr)
-            }
+            },
+            // Joypad Controller
+            0x4016 => self.joypad.read(),
             // PRG ROM Registers
             0x8000 ..= 0xFFFF => self.read_prg_rom(addr),
             _ => {
@@ -96,6 +118,8 @@ impl Memory for Bus {
                 self.write(mirror_down_addr, value);
                 // todo!("PPU is not supported yet");
             },
+            // Joypad Controller
+            0x4016 => self.joypad.write(value),
             // PRG ROM Registers
             0x8000 ..= 0xFFFF => {
                 panic!("Attempt to write to Cartridge ROM space")
