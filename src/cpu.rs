@@ -48,7 +48,6 @@ impl CPU<'_> {
                 self.interrupt_nmi();
             };
 
-            // println!("{}", self.trace());
             callback(self);
 
             let opscode = self.read(self.regs.pc);
@@ -125,6 +124,7 @@ impl CPU<'_> {
                 0x27 | 0x37 | 0x2F | 0x3F | 0x3B | 0x33 | 0x23 => self.rla(&instruction.addr_mode),
                 0x07 | 0x17 | 0x0F | 0x1F | 0x1B | 0x03 | 0x13 => self.slo(&instruction.addr_mode),
                 0x47 | 0x57 | 0x4F | 0x5f | 0x5b | 0x43 | 0x53 => self.sre(&instruction.addr_mode),
+                
                 /* SKB */
                 0x80 | 0x82 | 0x89 | 0xC2 | 0xE2 => {
                     /* 2 byte NOP (immidiate ) */
@@ -168,8 +168,8 @@ impl CPU<'_> {
 
             if program_counter_state == self.regs.pc {
                 self.regs.pc += (instruction.bytes - 1) as u16;
-            }
-        }
+            };
+        };
     }
 
     pub(crate) fn get_op_addr(&mut self, mode: &AddressingMode) -> (u16, bool) {

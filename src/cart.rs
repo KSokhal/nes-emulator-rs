@@ -51,10 +51,9 @@ impl RomHeader {
         let prg_rom_start = 16 + if has_trainer { 512 } else { 0 };
         let chr_rom_start = prg_rom_start + prg_rom_size;
 
-        // Added 1 to each end index
         Self {
-            prg_rom_start: prg_rom_start,
-            chr_rom_start: chr_rom_start,
+            prg_rom_start,
+            chr_rom_start,
             prg_rom_size,
             chr_rom_size,
             mapper,

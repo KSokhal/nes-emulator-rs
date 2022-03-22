@@ -1,10 +1,8 @@
-#[allow(dead_code)]
-pub(crate) fn get_bit(input: u8, index: u8) -> bool {
+pub fn get_bit(input: u8, index: u8) -> bool {
     input & (1 << index) != 0
 }
 
-#[allow(dead_code)]
-pub(crate) fn set_bit(input: &mut u8, index: u8, value: bool) {
+pub fn set_bit(input: &mut u8, index: u8, value: bool) {
     let mut x = 1 << index;
     if value {
         *input |= x; // Set the bit

@@ -1,4 +1,6 @@
-use crate::{cart::Cart, ppu::PPU, joypad::Joypad};
+use crate::cart::Cart;
+use crate::ppu::PPU;
+use crate::joypad::Joypad;
 
 pub(crate) trait Memory {
     fn read(&mut self, addr: u16) -> u8;
@@ -10,7 +12,6 @@ pub(crate) trait Memory {
     fn write_16(&mut self, pos: u16, value: u16);
 }
 
-
 pub struct Bus<'call> {
     vram: [u8; 2048],
     prg_rom: Vec<u8>,
@@ -19,10 +20,9 @@ pub struct Bus<'call> {
     cycles: usize,
 
     gameloop_callback: Box<dyn FnMut(&PPU, &mut Joypad) + 'call>,
- }
+}
  
 impl Bus<'_>{
-
     pub(crate) fn new<'call, F>(cart: Cart, gameloop_callback: F) -> Bus<'call> 
     where
         F: FnMut(&PPU, &mut Joypad) + 'call,

@@ -3,15 +3,15 @@ use crate::lib::{get_bit, set_bit};
 use crate::cpu::{CPU, AddressingMode};
 use crate::registers::{ZERO_RESULT_FLAG_BYTE_POSITION, NEGATIVE_RESULT_FLAG_BYTE_POSITION, CARRY_FLAG_BYTE_POSITION, OVERFLOW_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
 
+const STACK: u16 = 0x0100;
+pub const STACK_RESET: u8 = 0xFD;
+
 pub struct Instruction {
     pub addr_mode: AddressingMode,
     pub name: &'static str,
     pub bytes: u8,
     pub cycles: u8,
 }
-
-const STACK: u16 = 0x0100;
-pub(crate) const STACK_RESET: u8 = 0xfd;
 
 impl CPU<'_> {
     pub(crate) fn get_instruction(&self, opcode: u8) -> Instruction {
@@ -371,23 +371,6 @@ impl CPU<'_> {
         self.regs.a = accumulator;
         self.update_result_flags(self.regs.a);
     }
-
-    // pub(crate) fn sub_from_accumulator(&mut self, value: u8) {
-    //     let (sum, did_overflow1) = self.regs.a.overflowing_sub(value);
-    //     let (accumulator, did_overflow2) = sum.overflowing_sub(
-    //         if get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION) {
-    //             1
-    //         } else {
-    //             0
-    //         }
-    //     );
-        
-    //     set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, did_overflow1 | did_overflow2);
-    //     set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
-        
-    //     self.regs.a = accumulator;
-    //     self.update_result_flags(self.regs.a);
-    // }
 
     fn stack_pop(&mut self) -> u8 {
         self.regs.sp = self.regs.sp.wrapping_add(1);
@@ -993,5 +976,4 @@ impl CPU<'_> {
         let data = self.regs.y & ((mem_address >> 8) as u8 + 1);
         self.write(mem_address, data)
     }
-
 }
