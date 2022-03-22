@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 
 use bus::Bus;
 use cart::Cart;
@@ -25,13 +26,21 @@ const WINDOW_WIDTH: usize = 256;
 const WINDOW_HEIGHT: usize = 240;
 
 fn main() {
-
+    // Get rom path from cmd line arg
+    let args: Vec<String> = env::args().collect();
+    let cart_path: &str;
+    if args.len() > 1 {
+        cart_path = &args[1];
+    } else {
+        cart_path = "./roms/Super Mario Land 2.gb";
+    }
+    
+    // Init SLD2
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem
-        .window("Tile viewer", (WINDOW_WIDTH * 2) as u32, (WINDOW_HEIGHT * 2) as u32)
-        .position_centered()
-        .build().unwrap();
+        .window("NES", (WINDOW_WIDTH * 2) as u32, (WINDOW_HEIGHT * 2) as u32)
+        .position_centered().build().unwrap();
 
     let mut canvas = window.into_canvas().present_vsync().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
@@ -40,7 +49,7 @@ fn main() {
     let creator = canvas.texture_creator();
     let mut texture = creator.create_texture_target(
         PixelFormatEnum::RGB24, 
-    (WINDOW_WIDTH) as u32,
+        (WINDOW_WIDTH) as u32, 
         (WINDOW_HEIGHT) as u32
     ).unwrap();
 
@@ -55,14 +64,12 @@ fn main() {
         (Keycode::Right, Inputs::Right),
     ]);
 
-    let cart = Cart::new("roms/Super Mario Bros. (World).nes");
-    // let cart = Cart::new("roms/tests/nestest.nes");
-
+    let cart = Cart::new(cart_path);
     let mut frame = Frame::new();
     
     let bus = Bus::new(cart, |ppu, joypad| {
         render(ppu, &mut frame);
-        texture.update(None, &frame.data, 256 * 2 * 3).unwrap();
+        texture.update(None, &frame.data, WINDOW_WIDTH * 2 * 3).unwrap();
 
         canvas.copy(&texture, None, None).unwrap();
 
@@ -75,18 +82,17 @@ fn main() {
                     ..
                 } => std::process::exit(0),
  
- 
                 Event::KeyDown { keycode, .. } => {
                     if let Some(key) = key_map.get(&keycode.unwrap_or(Keycode::Ampersand)) {
                         joypad.set_button_pressed_status(*key, true);
                     }
                 }
+
                 Event::KeyUp { keycode, .. } => {
                     if let Some(key) = key_map.get(&keycode.unwrap_or(Keycode::Ampersand)) {
                         joypad.set_button_pressed_status(*key, false);
                     }
                 }
- 
                 _ => { /* do nothing */ }
             }
         }
