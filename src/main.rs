@@ -25,15 +25,15 @@ pub mod rendering;
 const WINDOW_WIDTH: usize = 256;
 const WINDOW_HEIGHT: usize = 240;
 
+const DEFAULT_ROM: &str = "roms/Super Mario Bros. (World).nes";
+
 fn main() {
     // Get rom path from cmd line arg
     let args: Vec<String> = env::args().collect();
-    let cart_path: &str;
+    let mut cart_path = DEFAULT_ROM;
     if args.len() > 1 {
         cart_path = &args[1];
-    } else {
-        cart_path = "./roms/Super Mario Land 2.gb";
-    }
+    };
     
     // Init SLD2
     let sdl_context = sdl2::init().unwrap();
