@@ -11,7 +11,7 @@ use crate::ppu::PPU;
 // const GENERATE_NMI_FLAG_BYTE_POSITION: u8 = 7;
 
 #[allow(dead_code)]
-enum PPUControlFlags {
+enum ControlFlags {
     Nametable1 = 0,
     Nametable2 = 1,
     VRamAdd = 2,
@@ -34,7 +34,7 @@ impl PPU {
     }
 
     pub fn vram_addr_increment(&self) -> u8 {   
-        if !get_bit(self.ctrl, PPUControlFlags::VRamAdd as u8) {
+        if !get_bit(self.ctrl, ControlFlags::VRamAdd as u8) {
             1
         } else {
             32
@@ -42,7 +42,7 @@ impl PPU {
     }
 
     pub fn sprt_pattern_addr(&self) -> u16 {
-        if !get_bit(self.ctrl, PPUControlFlags::SpritePatternAddr as u8) {
+        if !get_bit(self.ctrl, ControlFlags::SpritePatternAddr as u8) {
             0
         } else {
             0x1000
@@ -50,7 +50,7 @@ impl PPU {
     }
 
     pub fn bknd_pattern_addr(&self) -> u16 {
-        if !get_bit(self.ctrl, PPUControlFlags::BackgroundPatternAddr as u8) {
+        if !get_bit(self.ctrl, ControlFlags::BackgroundPatternAddr as u8) {
             0
         } else {
             0x1000
@@ -58,7 +58,7 @@ impl PPU {
     }
 
     pub fn sprite_size(&self) -> u8 {
-        if !get_bit(self.ctrl, PPUControlFlags::SpriteSize as u8) {
+        if !get_bit(self.ctrl, ControlFlags::SpriteSize as u8) {
             8
         } else {
             16
@@ -67,7 +67,7 @@ impl PPU {
 
     pub fn master_slave_select(&self) -> u8 {
         // if !get_bit(self.ctrl, PPUControlFlags::SpriteSize as u8) {
-        if !get_bit(self.ctrl, PPUControlFlags::MasterSlaveSelect as u8) {
+        if !get_bit(self.ctrl, ControlFlags::MasterSlaveSelect as u8) {
             0
         } else {
             1
@@ -75,6 +75,6 @@ impl PPU {
     }
 
     pub fn generate_vblank_nmi(&self) -> bool {
-        return get_bit(self.ctrl, PPUControlFlags::GenerateNMI as u8);
+        return get_bit(self.ctrl, ControlFlags::GenerateNMI as u8);
     }
 }

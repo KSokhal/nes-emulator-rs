@@ -1,8 +1,8 @@
 use crate::cart::Mirroring;
 
 use registers::addr::AddrRegister;
+use registers::scroll::ScrollRegister;
 
-use self::registers::scroll::ScrollRegister;
 pub mod registers;
 
 pub struct PPU {
@@ -25,7 +25,6 @@ pub struct PPU {
 
     pub nmi_interrupt: Option<u8>, 
 }
-
 
 impl PPU {
     pub fn new(chr_rom: Vec<u8>, mirroring: Mirroring) -> Self {
