@@ -108,7 +108,14 @@ impl Memory for Bus<'_> {
                 self.vram[mirror_down_addr as usize] = value;
             }
             // PPU Registers
-            0x2000 => self.ppu.write_to_ctrl(value),
+            0x2000 => {
+                /*  
+                    https://www.nesdev.org/wiki/PPU_registers
+                    To avoid this problem it is prudent to read $2002 immediately before writing $2000 to clear the vblank flag.  
+                */
+                self.ppu.read_status();
+                self.ppu.write_to_ctrl(value);
+            },
             0x2001 => self.ppu.write_to_mask(value),
             0x2002 => panic!("attempt to write to PPU status register"),
             0x2003 => self.ppu.write_to_oam_addr(value),
