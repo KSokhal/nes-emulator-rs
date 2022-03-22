@@ -1,11 +1,13 @@
-pub(crate) const CARRY_FLAG_BYTE_POSITION: u8 = 0;
-pub(crate) const ZERO_RESULT_FLAG_BYTE_POSITION: u8 = 1;
-pub(crate) const INTERRUPT_DISABLE_FLAG_BYTE_POSITION: u8 = 2;
-pub(crate) const DECIMAL_MODE_FLAG_BYTE_POSITION: u8 = 3;
-pub(crate) const BREAK_FLAG_BYTE_POSITION: u8 = 4;
-pub(crate) const BREAK2_FLAG_BYTE_POSITION: u8 = 5;
-pub(crate) const OVERFLOW_FLAG_BYTE_POSITION: u8 = 6;
-pub(crate) const NEGATIVE_RESULT_FLAG_BYTE_POSITION: u8 = 7;
+pub enum CPUStatusFlags {
+    CarryFlag = 0,
+    ZeroResult = 1,
+    InterruptDisable = 2,
+    DecimalMode = 3,
+    BreakFlag = 4,
+    Break2Flag = 5,
+    OverflowFlag = 6,
+    NegativeResult = 7,
+}
 
 #[derive(Default)]
 pub(crate) struct Registers {

@@ -1,15 +1,6 @@
 use crate::lib::get_bit;
 use crate::ppu::PPU;
 
-// const NAMETABLE1_FLAG_BYTE_POSITION: u8 = 0;
-// const NAMETABLE2_FLAG_BYTE_POSITION: u8 = 1;
-// const VRAM_ADD_INCREMENT_FLAG_BYTE_POSITION: u8 = 2;
-// const SPRITE_PATTERN_ADDR_FLAG_BYTE_POSITION: u8 = 3;
-// const BACKROUND_PATTERN_ADDR_FLAG_BYTE_POSITION: u8 = 4;
-// const SPRITE_SIZE_FLAG_BYTE_POSITION: u8 = 5;
-// const MASTER_SLAVE_SELECT_FLAG_BYTE_POSITION: u8 = 6;
-// const GENERATE_NMI_FLAG_BYTE_POSITION: u8 = 7;
-
 #[allow(dead_code)]
 enum ControlFlags {
     Nametable1 = 0,

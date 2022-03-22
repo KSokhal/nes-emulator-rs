@@ -1,7 +1,7 @@
 use crate::bus::Memory;
 use crate::lib::{get_bit, set_bit};
 use crate::cpu::{CPU, AddressingMode};
-use crate::registers::{ZERO_RESULT_FLAG_BYTE_POSITION, NEGATIVE_RESULT_FLAG_BYTE_POSITION, CARRY_FLAG_BYTE_POSITION, OVERFLOW_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION};
+use crate::registers::CPUStatusFlags;
 
 const STACK: u16 = 0x0100;
 pub const STACK_RESET: u8 = 0xFD;
@@ -336,8 +336,8 @@ impl CPU<'_> {
     }
 
     fn update_result_flags(&mut self, result: u8) {
-        set_bit(&mut self.regs.p, ZERO_RESULT_FLAG_BYTE_POSITION, result == 0);
-        set_bit(&mut self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION, get_bit(result, 7));
+        set_bit(&mut self.regs.p, CPUStatusFlags::ZeroResult as u8, result == 0);
+        set_bit(&mut self.regs.p, CPUStatusFlags::NegativeResult as u8, get_bit(result, 7));
     }
 
     fn branch(&mut self, condition: bool) {
@@ -358,15 +358,15 @@ impl CPU<'_> {
     pub(crate) fn add_to_accumulator(&mut self, value: u8) {
         let (sum, did_overflow1) = self.regs.a.overflowing_add(value);
         let (accumulator, did_overflow2) = sum.overflowing_add(
-            if get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION) {
+            if get_bit(self.regs.p, CPUStatusFlags::CarryFlag as u8) {
                 1
             } else {
                 0
             }
         );
         
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, did_overflow1 | did_overflow2);
-        set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, did_overflow1 | did_overflow2);
+        set_bit(&mut self.regs.p, CPUStatusFlags::OverflowFlag as u8, (value ^ accumulator) & (accumulator ^ self.regs.a) & 0x80 != 0);
         
         self.regs.a = accumulator;
         self.update_result_flags(self.regs.a);
@@ -420,7 +420,7 @@ impl CPU<'_> {
     }
 
     pub(crate) fn asl_accumulator(&mut self) {
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(self.regs.a, 7));
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, get_bit(self.regs.a, 7));
         self.regs.a <<= 1;
         self.update_result_flags(self.regs.a);
     }
@@ -430,7 +430,7 @@ impl CPU<'_> {
         let mut value = self.read(addr);
 
         let bit = get_bit(value, 7);
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, bit);
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, bit);
 
         value <<= 1;
         self.write(addr, value);
@@ -439,15 +439,15 @@ impl CPU<'_> {
     }
 
     pub(crate) fn bcc(&mut self) {
-        self.branch(!get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION));
+        self.branch(!get_bit(self.regs.p, CPUStatusFlags::CarryFlag as u8));
     }
 
     pub(crate) fn bcs(&mut self) {
-        self.branch(get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION));
+        self.branch(get_bit(self.regs.p, CPUStatusFlags::CarryFlag as u8));
     }
 
     pub(crate) fn beq(&mut self) {
-        self.branch(get_bit(self.regs.p, ZERO_RESULT_FLAG_BYTE_POSITION));
+        self.branch(get_bit(self.regs.p, CPUStatusFlags::ZeroResult as u8));
     }
 
     pub(crate) fn bit(&mut self, mode: &AddressingMode) {
@@ -455,45 +455,45 @@ impl CPU<'_> {
         let value = self.read(addr);
         
         let check = self.regs.a & value;
-        set_bit(&mut self.regs.p, ZERO_RESULT_FLAG_BYTE_POSITION, check == 0);
-        set_bit(&mut self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION, get_bit(value, 7));
-        set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, get_bit(value, 6));
+        set_bit(&mut self.regs.p, CPUStatusFlags::ZeroResult as u8, check == 0);
+        set_bit(&mut self.regs.p, CPUStatusFlags::NegativeResult as u8, get_bit(value, 7));
+        set_bit(&mut self.regs.p, CPUStatusFlags::OverflowFlag as u8, get_bit(value, 6));
     }
 
     pub(crate) fn bmi(&mut self) {
-        self.branch(get_bit(self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION));
+        self.branch(get_bit(self.regs.p, CPUStatusFlags::NegativeResult as u8));
     }
 
     pub(crate) fn bne(&mut self) {
-        self.branch(!get_bit(self.regs.p, ZERO_RESULT_FLAG_BYTE_POSITION));
+        self.branch(!get_bit(self.regs.p, CPUStatusFlags::ZeroResult as u8));
     }
 
     pub(crate) fn bpl(&mut self) {
-        self.branch(!get_bit(self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION));
+        self.branch(!get_bit(self.regs.p, CPUStatusFlags::NegativeResult as u8));
     }
 
     pub(crate) fn bvc(&mut self) {
-        self.branch(!get_bit(self.regs.p, OVERFLOW_FLAG_BYTE_POSITION));
+        self.branch(!get_bit(self.regs.p, CPUStatusFlags::OverflowFlag as u8));
     }
 
     pub(crate) fn bvs(&mut self) {
-        self.branch(get_bit(self.regs.p, OVERFLOW_FLAG_BYTE_POSITION));
+        self.branch(get_bit(self.regs.p, CPUStatusFlags::OverflowFlag as u8));
     }
 
     pub(crate) fn clc(&mut self) {
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, false);
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, false);
     }
 
     pub(crate) fn cld(&mut self) {
-        set_bit(&mut self.regs.p, DECIMAL_MODE_FLAG_BYTE_POSITION, false);
+        set_bit(&mut self.regs.p, CPUStatusFlags::DecimalMode as u8, false);
     }
 
     pub(crate) fn cli(&mut self) {
-        set_bit(&mut self.regs.p, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, false);
+        set_bit(&mut self.regs.p, CPUStatusFlags::InterruptDisable as u8, false);
     }
     
     pub(crate) fn clv(&mut self) {
-        set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, false);
+        set_bit(&mut self.regs.p, CPUStatusFlags::OverflowFlag as u8, false);
     }
 
     pub(crate) fn compare(&mut self, mode: &AddressingMode, compare_reg: u8) {
@@ -504,7 +504,7 @@ impl CPU<'_> {
             self.bus.tick(1);
         };
 
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, compare_reg >= value);
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, compare_reg >= value);
         let result = compare_reg.wrapping_sub(value);
         self.update_result_flags(result);
     }
@@ -628,7 +628,7 @@ impl CPU<'_> {
     }
 
     pub(crate) fn lsr_accumulator(&mut self) {
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(self.regs.a, 0));
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, get_bit(self.regs.a, 0));
         self.regs.a >>= 1;
         self.update_result_flags(self.regs.a);
     }
@@ -638,7 +638,7 @@ impl CPU<'_> {
         let mut value = self.read(addr);
 
         let bit = get_bit(value, 0);
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, bit);
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, bit);
 
         value >>= 1;
         self.write(addr, value);
@@ -676,8 +676,8 @@ impl CPU<'_> {
     }
 
     pub(crate) fn rol_accumulator(&mut self) {
-        let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(self.regs.a, 7));
+        let old_carry = get_bit(self.regs.p, CPUStatusFlags::CarryFlag as u8); 
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, get_bit(self.regs.a, 7));
         self.regs.a <<= 1;
         set_bit(&mut self.regs.a, 0, old_carry);
         self.update_result_flags(self.regs.a);
@@ -687,8 +687,8 @@ impl CPU<'_> {
         let (addr, _page_crossed) = self.get_op_addr(mode);
         let mut value = self.read(addr);
 
-        let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(value, 7));
+        let old_carry = get_bit(self.regs.p, CPUStatusFlags::CarryFlag as u8); 
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, get_bit(value, 7));
         value <<= 1;
         set_bit(&mut value, 0, old_carry);
 
@@ -698,8 +698,8 @@ impl CPU<'_> {
     }
 
     pub(crate) fn ror_accumulator(&mut self) {
-        let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(self.regs.a, 0));
+        let old_carry = get_bit(self.regs.p, CPUStatusFlags::CarryFlag as u8); 
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, get_bit(self.regs.a, 0));
         self.regs.a >>= 1;
         set_bit(&mut self.regs.a, 7, old_carry);
         self.update_result_flags(self.regs.a);
@@ -709,8 +709,8 @@ impl CPU<'_> {
         let (addr, _page_crossed) = self.get_op_addr(mode);
         let mut value = self.read(addr);
 
-        let old_carry = get_bit(self.regs.p, CARRY_FLAG_BYTE_POSITION); 
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, get_bit(value, 0));
+        let old_carry = get_bit(self.regs.p, CPUStatusFlags::CarryFlag as u8); 
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, get_bit(value, 0));
         value >>= 1;
         set_bit(&mut value, 7, old_carry);
 
@@ -792,7 +792,7 @@ impl CPU<'_> {
         self.write(addr, value);
 
         if value <= self.regs.a {
-            set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, true)
+            set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, true)
         }
 
         self.update_result_flags(self.regs.a.wrapping_sub(value));
@@ -824,7 +824,7 @@ impl CPU<'_> {
         let result = x_and_a.wrapping_sub(value);
 
         if value <= x_and_a {
-            set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, true);
+            set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, true);
         }
 
         self.update_result_flags(result);
@@ -845,9 +845,9 @@ impl CPU<'_> {
         let bit_5 = get_bit(result, 5);
         let bit_6 = get_bit(result, 6);
 
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, bit_6);
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, bit_6);
 
-        set_bit(&mut self.regs.p, OVERFLOW_FLAG_BYTE_POSITION, bit_5 ^ bit_6);
+        set_bit(&mut self.regs.p, CPUStatusFlags::OverflowFlag as u8, bit_5 ^ bit_6);
 
         self.update_result_flags(result);
     }
@@ -866,8 +866,8 @@ impl CPU<'_> {
         self.regs.a &= value;
         self.update_result_flags(self.regs.a);
 
-        let negative_flag = get_bit(self.regs.p, NEGATIVE_RESULT_FLAG_BYTE_POSITION);
-        set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, negative_flag);
+        let negative_flag = get_bit(self.regs.p, CPUStatusFlags::NegativeResult as u8);
+        set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, negative_flag);
     }
 
     pub(crate) fn alr(&mut self, mode: &AddressingMode) {

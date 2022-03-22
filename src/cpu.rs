@@ -1,6 +1,6 @@
 use crate::bus::{Bus, Memory};
 use crate::instructions::STACK_RESET;
-use crate::registers::{Registers, CARRY_FLAG_BYTE_POSITION, DECIMAL_MODE_FLAG_BYTE_POSITION, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, BREAK_FLAG_BYTE_POSITION, BREAK2_FLAG_BYTE_POSITION};
+use crate::registers::{Registers, CPUStatusFlags};
 use crate::lib::set_bit;
 
 #[derive(Debug)]
@@ -106,9 +106,9 @@ impl CPU<'_> {
                 0x40 => self.rti(),
                 0x60 => self.rts(),
                 0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => self.sbc(&instruction.addr_mode),
-                0x38 => set_bit(&mut self.regs.p, CARRY_FLAG_BYTE_POSITION, true),
-                0xF8 => set_bit(&mut self.regs.p, DECIMAL_MODE_FLAG_BYTE_POSITION, true),
-                0x78 => set_bit(&mut self.regs.p, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, true),
+                0x38 => set_bit(&mut self.regs.p, CPUStatusFlags::CarryFlag as u8, true),
+                0xF8 => set_bit(&mut self.regs.p, CPUStatusFlags::DecimalMode as u8, true),
+                0x78 => set_bit(&mut self.regs.p, CPUStatusFlags::InterruptDisable as u8, true),
                 0x85 | 0x95 | 0x8D | 0x9D | 0x99 | 0x81 | 0x91 => self.sta(&instruction.addr_mode),
                 0x86 | 0x96 | 0x8E => self.stx(&instruction.addr_mode),
                 0x84 | 0x94 | 0x8C => self.sty(&instruction.addr_mode),
@@ -230,11 +230,11 @@ impl CPU<'_> {
         self.stack_push_16(self.regs.pc);
         let mut flag = self.regs.p.clone();
 
-        set_bit(&mut flag, BREAK_FLAG_BYTE_POSITION, false);
-        set_bit(&mut flag, BREAK2_FLAG_BYTE_POSITION, true);
+        set_bit(&mut flag, CPUStatusFlags::BreakFlag as u8, false);
+        set_bit(&mut flag, CPUStatusFlags::Break2Flag as u8, true);
  
         self.stack_push(flag);
-        set_bit(&mut self.regs.p, INTERRUPT_DISABLE_FLAG_BYTE_POSITION, true);
+        set_bit(&mut self.regs.p, CPUStatusFlags::InterruptDisable as u8, true);
  
         self.bus.tick(2);
         self.regs.pc = self.read_16(0xFFFA);
