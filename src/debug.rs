@@ -62,8 +62,7 @@ impl<'a> CPU<'a> {
         let ops = self.get_instruction(code);
 
         let begin = self.regs.pc;
-        let mut hex_dump = vec![];
-        hex_dump.push(code);
+        let mut hex_dump = vec![code];
 
         let (mem_addr, stored_value) = match ops.addr_mode {
             AddressingMode::Immediate | AddressingMode::NoneAddressing => (0, 0),
@@ -75,7 +74,7 @@ impl<'a> CPU<'a> {
 
         let tmp = match ops.bytes {
             1 => match code {
-                0x0a | 0x4a | 0x2a | 0x6a => format!("A "),
+                0x0a | 0x4a | 0x2a | 0x6a => "A ".to_string(),
                 _ => String::from(""),
             },
             2 => {

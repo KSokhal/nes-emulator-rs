@@ -206,8 +206,8 @@ impl CPU<'_> {
             0xc7 => Instruction { name: "*DCP", bytes: 2, cycles: 5, addr_mode: AddressingMode::ZeroPage },
             0xd7 => Instruction { name: "*DCP", bytes: 2, cycles: 6, addr_mode: AddressingMode::ZeroPageX },
             0xCF => Instruction { name: "*DCP", bytes: 3, cycles: 6, addr_mode: AddressingMode::Absolute },
-            0xdF => Instruction { name: "*DCP", bytes: 3, cycles: 7, addr_mode: AddressingMode::AbsoluteX },
-            0xdb => Instruction { name: "*DCP", bytes: 3, cycles: 7, addr_mode: AddressingMode::AbsoluteY },
+            0xDF => Instruction { name: "*DCP", bytes: 3, cycles: 7, addr_mode: AddressingMode::AbsoluteX },
+            0xDB => Instruction { name: "*DCP", bytes: 3, cycles: 7, addr_mode: AddressingMode::AbsoluteY },
             0xd3 => Instruction { name: "*DCP", bytes: 2, cycles: 8, addr_mode: AddressingMode::IndirectY },
             0xc3 => Instruction { name: "*DCP", bytes: 2, cycles: 8, addr_mode: AddressingMode::IndirectX },
 
