@@ -77,7 +77,7 @@ impl PPU {
     }
 
     pub(crate) fn read_status(&mut self) -> u8 {
-        let data = self.status.clone();
+        let data = self.status;
         self.reset_vblank_status();
         self.addr.reset_latch();
         self.scroll.reset_latch();
@@ -175,7 +175,7 @@ impl PPU {
                 self.set_sprite_zero_hit(true);
             }
 
-            self.cycles = self.cycles - 341;
+            self.cycles -= 341;
             self.scanline += 1;
 
             if self.scanline == 241 {
@@ -194,7 +194,7 @@ impl PPU {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     fn is_sprite_0_hit(&self, cycle: usize) -> bool {

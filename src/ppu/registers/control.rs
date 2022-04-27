@@ -66,6 +66,6 @@ impl PPU {
     }
 
     pub fn generate_vblank_nmi(&self) -> bool {
-        return get_bit(self.ctrl, ControlFlags::GenerateNMI as u8);
+        get_bit(self.ctrl, ControlFlags::GenerateNMI as u8)
     }
 }
