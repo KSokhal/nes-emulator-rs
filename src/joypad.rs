@@ -60,3 +60,9 @@ impl Joypad {
         set_bit(&mut self.button_status, index, pressed);
     }
 }
+
+impl Default for Joypad {
+    fn default() -> Self {
+        Self::new()
+    }
+}

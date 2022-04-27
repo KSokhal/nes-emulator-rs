@@ -20,8 +20,8 @@ mod tests {
     #[test]
     fn test_valid_get_bit() {
         let bytes: u8 = 0b1001_1010;
-        assert_eq!(get_bit(bytes, 0), false);
-        assert_eq!(get_bit(bytes, 1), true);
+        assert!(!get_bit(bytes, 0));
+        assert!(get_bit(bytes, 1));
     }
 
     #[test]
