@@ -42,6 +42,12 @@ impl Frame {
     }
 }
 
+impl Default for Frame {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn bg_pallette(ppu: &PPU, attribute_table: &[u8], tile_column: usize, tile_row: usize) -> [u8; 4] {
     let attr_table_idx = tile_row / 4 * 8 + tile_column / 4;
     let attr_byte = attribute_table[attr_table_idx]; 
@@ -105,16 +111,9 @@ pub fn render(ppu: &PPU, frame: &mut Frame) {
         let tile_x = ppu.oam_data[i + 3] as usize;
         let tile_y = ppu.oam_data[i] as usize;
 
-        let flip_vertical = if ppu.oam_data[i + 2] >> 7 & 1 == 1 {
-            true
-        } else {
-            false
-        };
-        let flip_horizontal = if ppu.oam_data[i + 2] >> 6 & 1 == 1 {
-            true
-        } else {
-            false
-        };
+        let flip_vertical = ppu.oam_data[i + 2] >> 7 & 1 == 1;
+        let flip_horizontal = ppu.oam_data[i + 2] >> 6 & 1 == 1;
+
         let pallette_idx = ppu.oam_data[i + 2] & 0b11;
         let sprite_palette = sprite_palette(ppu, pallette_idx);
         let bank: u16 = ppu.sprt_pattern_addr();
@@ -127,8 +126,8 @@ pub fn render(ppu: &PPU, frame: &mut Frame) {
             let mut lower = tile[y + 8];
             'ololo: for x in (0..=7).rev() {
                 let value = (1 & lower) << 1 | (1 & upper);
-                upper = upper >> 1;
-                lower = lower >> 1;
+                upper >>= 1;
+                lower >>= 1;
                 let rgb = match value {
                     0 => continue 'ololo, // skip coloring the pixel
                     1 => SYSTEM_PALLETE[sprite_palette[1] as usize],
@@ -192,7 +191,7 @@ fn render_name_table(ppu: &PPU, frame: &mut Frame, name_table: &[u8], view_port:
 
     let attribute_table = &name_table[0x3c0.. 0x400];
 
-    for i in 0..0x3c0 {
+    for i in 0 .. 0x3c0 {
         let tile_column = i % 32;
         let tile_row = i / 32;
         let tile_idx = name_table[i] as u16;
@@ -205,8 +204,8 @@ fn render_name_table(ppu: &PPU, frame: &mut Frame, name_table: &[u8], view_port:
 
             for x in (0 ..= 7).rev() {
                 let value = (1 & lower) << 1 | (1 & upper);
-                upper = upper >> 1;
-                lower = lower >> 1;
+                upper >>= 1;
+                lower >>= 1;
                 let rgb = match value {
                     0 => SYSTEM_PALLETE[ppu.palette_table[0] as usize],
                     1 => SYSTEM_PALLETE[palette[1] as usize],
