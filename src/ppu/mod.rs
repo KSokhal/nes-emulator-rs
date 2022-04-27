@@ -2,7 +2,6 @@ use crate::cart::Mirroring;
 
 use registers::addr::AddrRegister;
 use registers::scroll::ScrollRegister;
-use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
 pub mod registers;

@@ -186,11 +186,12 @@ impl Rect {
     }
 }
 
+#[allow(clippy::needless_range_loop)]
 fn render_name_table(ppu: &PPU, frame: &mut Frame, name_table: &[u8], view_port: Rect, shift_x: isize, shift_y: isize) {
     let bank = ppu.bknd_pattern_addr();
-
+    
     let attribute_table = &name_table[0x3c0.. 0x400];
-
+    
     for i in 0 .. 0x3c0 {
         let tile_column = i % 32;
         let tile_row = i / 32;

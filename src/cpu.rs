@@ -17,13 +17,14 @@ pub enum AddressingMode {
    NoneAddressing,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub(crate) struct CPU<'a> {
     pub regs: Registers,
     pub bus: Bus<'a>,
 }
 
 impl CPU<'_> {
-    pub fn new<'b>(bus: Bus<'b>) -> CPU<'b> {
+    pub fn new(bus: Bus<'_>) -> CPU<'_> {
         CPU { 
             regs: Registers::default(),
             bus
