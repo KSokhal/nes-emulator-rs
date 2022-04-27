@@ -23,8 +23,8 @@ pub struct RomHeader {
 }
 
 impl RomHeader {
-    fn new(buffer: &Vec<u8>) -> Self {
-        if &buffer[0..4] != NES_TAG {
+    fn new(buffer: &[u8]) -> Self {
+        if buffer[0..4] != NES_TAG {
             panic!("File is not in iNES file format");
         }   
 
@@ -79,9 +79,9 @@ impl Cart {
         let rom_size: usize;
         // Open file inside its own scope so it is dropped when file is read into buffer
         {
-            let mut file = File::open(file_path).expect(format!("Unable to open file {}", file_path).as_str());
+            let mut file = File::open(file_path).unwrap_or_else(|_| panic!("Unable to open file {}", file_path));
             // read the whole file
-            rom_size = file.read_to_end(&mut rom_data).expect(format!("Unable to read file {}", file_path).as_str());
+            rom_size = file.read_to_end(&mut rom_data).unwrap_or_else(|_| panic!("Unable to read file {}", file_path));
         }
         
         let header = RomHeader::new(&rom_data);

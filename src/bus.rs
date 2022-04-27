@@ -43,7 +43,7 @@ impl Bus<'_>{
         addr -= 0x8000;
         if self.prg_rom.len() == 0x4000 && addr >= 0x4000 {
             //mirror if needed
-            addr = addr % 0x4000;
+            addr %= 0x4000;
         }
         self.prg_rom[addr as usize]
     }
@@ -71,7 +71,7 @@ impl Memory for Bus<'_> {
         match addr {
             // RAM Registers
             0x0000 ..= 0x1FFF => {
-                let mirror_down_addr = addr & 0b00000111_11111111;
+                let mirror_down_addr = addr & 0b0000_0111_1111_1111;
                 self.vram[mirror_down_addr as usize]
             }
             // PPU Registers
@@ -83,7 +83,7 @@ impl Memory for Bus<'_> {
             0x2004 => self.ppu.read_oam_data(),
             0x2007 => self.ppu.read_data(),
             0x2008 ..= 0x3FFF => {
-                let mirror_down_addr = addr & 0b00100000_00000111;
+                let mirror_down_addr = addr & 0b0010_0000_0000_0111;
                 self.read(mirror_down_addr)
             },
             // APU
@@ -124,12 +124,12 @@ impl Memory for Bus<'_> {
             0x2006 => self.ppu.write_to_ppu_addr(value),
             0x2007 => self.ppu.write_to_data(value),
             0x2008 ..= 0x3FFF => {
-                let mirror_down_addr = addr & 0b00100000_00000111;
+                let mirror_down_addr = addr & 0b0010_0000_0000_0111;
                 self.write(mirror_down_addr, value);
                 // todo!("PPU is not supported yet");
             },
             // APU
-            0x4000 ..= 0x4013 | 0x4015 => return,
+            0x4000 ..= 0x4013 | 0x4015 => {},
             0x4014 => {
                 let mut buffer: [u8; 256] = [0; 256];
                 let hi: u16 = (value as u16) << 8;

@@ -132,13 +132,13 @@ impl CPU<'_> {
                 }
                 0xCB => self.axs(&instruction.addr_mode),
                 0x6B => self.arr(&instruction.addr_mode),
-                0xeB => self.sbc_unofficial(&instruction.addr_mode),
+                0xEB => self.sbc_unofficial(&instruction.addr_mode),
                 0x0B | 0x2B => self.anc(&instruction.addr_mode),
                 0x4B => self.alr(&instruction.addr_mode),
 
                 /* NOP read */
                 0x04 | 0x44 | 0x64 | 0x14 | 0x34 | 0x54 | 0x74 | 0xD4 | 0xF4 | 0x0C | 0x1C
-                | 0x3C | 0x5C | 0x7C | 0xdC | 0xFC => {
+                | 0x3C | 0x5C | 0x7C | 0xDC | 0xFC => {
                     let (addr, page_crossed) = self.get_op_addr(&instruction.addr_mode);
                     let _value = self.read(addr);
 
@@ -228,7 +228,7 @@ impl CPU<'_> {
 
     fn interrupt_nmi(&mut self) {
         self.stack_push_16(self.regs.pc);
-        let mut flag = self.regs.p.clone();
+        let mut flag = self.regs.p;
 
         set_bit(&mut flag, CPUStatusFlags::BreakFlag as u8, false);
         set_bit(&mut flag, CPUStatusFlags::Break2Flag as u8, true);
