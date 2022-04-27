@@ -1,11 +1,12 @@
 use crate::lib::get_bit;
 use std::{fs::File, io::Read};
+use serde::{Deserialize, Serialize};
 
 const NES_TAG: [u8; 4] = [0x4E, 0x45, 0x53, 0x1A];
 const PRG_ROM_PAGE_SIZE: usize = 16384;
 const CHR_ROM_PAGE_SIZE: usize = 8192;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Mirroring {
    Vertical,
    Horizontal,

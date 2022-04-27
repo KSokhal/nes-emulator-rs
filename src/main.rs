@@ -21,6 +21,11 @@ pub mod ppu;
 pub mod joypad;
 pub mod rendering;
 
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_big_array;
+extern crate rmp_serde as rmps;
 
 const WINDOW_WIDTH: usize = 256;
 const WINDOW_HEIGHT: usize = 240;

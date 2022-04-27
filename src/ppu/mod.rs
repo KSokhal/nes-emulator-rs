@@ -2,9 +2,11 @@ use crate::cart::Mirroring;
 
 use registers::addr::AddrRegister;
 use registers::scroll::ScrollRegister;
+use serde::{Deserialize, Serialize};
+use serde_big_array::BigArray;
 
 pub mod registers;
-
+#[derive(Deserialize, Serialize)]
 pub struct PPU {
     pub chr_rom: Vec<u8>,
     pub mirroring: Mirroring,
@@ -13,9 +15,11 @@ pub struct PPU {
     pub status: u8,
     pub scroll: ScrollRegister,
     pub addr: AddrRegister,
+    #[serde(with = "BigArray")]
     pub vram: [u8; 2048],
 
     pub oam_addr: u8,
+    #[serde(with = "BigArray")]
     pub oam_data: [u8; 256],
     pub palette_table: [u8; 32],
   

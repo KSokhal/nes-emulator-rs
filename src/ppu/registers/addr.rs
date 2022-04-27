@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize)]
 pub struct AddrRegister {
     value: (u8, u8),
     hi_ptr: bool,
