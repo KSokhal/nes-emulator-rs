@@ -8,9 +8,9 @@ Know bugs to fix:
 
 Key features still to work on:
 
+-   [ ] Save states
 -   [ ] Audio
 -   [ ] Saving
--   [ ] Save states
 
 ## Usage
 
@@ -18,4 +18,4 @@ Key features still to work on:
 
 ---
 
-The aim of this project was to learn low level programming and the Rust language, and an emulator seem a good fit for both. Also it would provide a robust Reinforcement Learning Environment for future projects.
+The aim of this project was to learn low level programming and the Rust language, and an emulator seem a good fit for both. Also it could provide a robust Reinforcement Learning Environment for future projects.

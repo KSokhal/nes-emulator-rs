@@ -20,6 +20,7 @@ pub mod debug;
 pub mod ppu;
 pub mod joypad;
 pub mod rendering;
+pub mod state;
 
 extern crate serde;
 #[macro_use]
