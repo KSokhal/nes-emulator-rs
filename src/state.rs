@@ -25,7 +25,7 @@ impl State {
     }
     
     pub fn load_state(state_number: u8) -> Self {
-        let mut file = File::open("save_state_1").unwrap();
+        let file = File::open(format!("save-state-{}", state_number)).unwrap();
         let reader = BufReader::new(file);
         let s: State = rmp_serde::from_read(reader).unwrap();
         s
