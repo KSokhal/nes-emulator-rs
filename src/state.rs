@@ -1,24 +1,33 @@
+use std::{fs::File, io::{Write, BufReader}};
+
 use serde_big_array::BigArray;
 
 use crate::ppu::PPU;
 
 #[derive(Deserialize, Serialize)]
-struct State {
+pub struct State {
     #[serde(with = "BigArray")]
-    ram: [u8; 2048],
-    ppu: PPU,
+    pub ram: [u8; 2048],
+    pub ppu: PPU,
 }
 
 impl State {
-    fn new() {
-
+    pub fn new(ram: [u8; 2048], ppu: PPU) -> Self {
+        Self {
+            ram,
+            ppu
+        }
     }
 
-    fn save_state() {
-
+    pub fn save_state(self, state_number: u8) {
+        let mut file = File::create(format!("save-state-{}", state_number)).expect("Failed to save state to file");
+        let _ = file.write_all(&rmp_serde::to_vec(&self).unwrap());
     }
     
-    fn load_state() {
-
+    pub fn load_state(state_number: u8) -> Self {
+        let mut file = File::open("save_state_1").unwrap();
+        let reader = BufReader::new(file);
+        let s: State = rmp_serde::from_read(reader).unwrap();
+        s
     }
 }

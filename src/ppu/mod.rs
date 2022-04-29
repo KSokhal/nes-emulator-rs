@@ -5,7 +5,7 @@ use registers::scroll::ScrollRegister;
 use serde_big_array::BigArray;
 
 pub mod registers;
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct PPU {
     pub chr_rom: Vec<u8>,
     pub mirroring: Mirroring,

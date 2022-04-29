@@ -1,4 +1,4 @@
-#[derive(Default, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub struct ScrollRegister {
     pub scroll_x: u8,
     pub scroll_y: u8,

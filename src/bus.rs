@@ -1,6 +1,7 @@
 use crate::cart::Cart;
 use crate::ppu::PPU;
 use crate::joypad::Joypad;
+use crate::state::State;
 
 pub(crate) trait Memory {
     fn read(&mut self, addr: u16) -> u8;
@@ -63,6 +64,17 @@ impl Bus<'_>{
 
     pub fn poll_nmi_status(&mut self) -> Option<u8> {
         self.ppu.poll_nmi_interrupt()
+    }
+
+    pub fn save_state(&mut self) {
+        let state = State::new(self.vram, self.ppu.clone());
+        state.save_state(1);
+    }
+
+    pub fn load_state(&mut self) {
+        let state = State::load_state(1);
+        self.vram = state.ram;
+        self.ppu = state.ppu;
     }
 }
 
