@@ -1,5 +1,3 @@
-use sdl2::controller::GameController;
-
 use crate::cart::Cart;
 use crate::ppu::PPU;
 use crate::joypad::Joypad;
