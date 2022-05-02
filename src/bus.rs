@@ -1,7 +1,15 @@
+use sdl2::controller::GameController;
+
 use crate::cart::Cart;
 use crate::ppu::PPU;
 use crate::joypad::Joypad;
 use crate::state::State;
+
+pub enum GameloopAction {
+    NoAction,
+    SaveState,
+    LoadState
+}
 
 pub(crate) trait Memory {
     fn read(&mut self, addr: u16) -> u8;
@@ -20,13 +28,13 @@ pub struct Bus<'call> {
     joypad: Joypad,
     cycles: usize,
 
-    gameloop_callback: Box<dyn FnMut(&PPU, &mut Joypad) + 'call>,
+    gameloop_callback: Box<dyn FnMut(&PPU, &mut Joypad) -> GameloopAction + 'call>,
 }
  
 impl Bus<'_>{
     pub(crate) fn new<'call, F>(cart: Cart, gameloop_callback: F) -> Bus<'call> 
     where
-        F: FnMut(&PPU, &mut Joypad) + 'call,
+        F: FnMut(&PPU, &mut Joypad) -> GameloopAction + 'call,
     {
         let ppu = PPU::new(cart.chr_rom, cart.rom_header.screen_mirroring);
 
@@ -58,7 +66,13 @@ impl Bus<'_>{
         let nmi_after = self.ppu.nmi_interrupt.is_some();
         // panic!();
         if !nmi_before && nmi_after {
-            (self.gameloop_callback)(&self.ppu, &mut self.joypad);
+            let action = (self.gameloop_callback)(&self.ppu, &mut self.joypad);
+
+            match action {
+                GameloopAction::NoAction => {},
+                GameloopAction::SaveState => self.save_state(),
+                GameloopAction::LoadState => self.load_state(),
+            }
         }
     }
 
@@ -73,8 +87,10 @@ impl Bus<'_>{
 
     pub fn load_state(&mut self) {
         let state = State::load_state(1);
-        self.vram = state.ram;
-        self.ppu = state.ppu;
+        if let Ok(state) = state {
+            self.vram = state.ram;
+            self.ppu = state.ppu;
+        }
     }
 }
 

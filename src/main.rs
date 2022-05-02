@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 
-use bus::Bus;
+use bus::{Bus, GameloopAction};
 use cart::Cart;
 use cpu::CPU;
 use joypad::Inputs;
@@ -77,31 +77,30 @@ fn main() {
         canvas.present();
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => std::process::exit(0),
+                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), ..} => std::process::exit(0),
+
+                Event::KeyDown { keycode: Some(Keycode::Z), .. } => return GameloopAction::SaveState, 
+
+                Event::KeyDown { keycode: Some(Keycode::X), .. } => return GameloopAction::LoadState, 
  
                 Event::KeyDown { keycode, .. } => {
                     if let Some(key) = key_map.get(&keycode.unwrap_or(Keycode::Ampersand)) {
                         joypad.set_button_pressed_status(*key, true);
                     }
                 }
-
+                
                 Event::KeyUp { keycode, .. } => {
                     if let Some(key) = key_map.get(&keycode.unwrap_or(Keycode::Ampersand)) {
                         joypad.set_button_pressed_status(*key, false);
                     }
                 }
-                _ => { /* do nothing */ }
+                _ => {}
             }
         }
+        GameloopAction::NoAction
     });
 
     let mut cpu = CPU::new(bus);
     cpu.reset();
-    cpu.run(|_cpu| {
-        // println!("{}", cpu.trace());
-    });
+    cpu.run();
 }

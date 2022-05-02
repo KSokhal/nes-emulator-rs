@@ -40,7 +40,11 @@ impl CPU<'_> {
         self.regs.pc = self.read_16(0xFFFC);
     }
 
-    pub fn run<F>(&mut self, mut callback: F) 
+    pub fn run(&mut self) {
+        self.run_callback(|_| {});
+    }
+
+    pub fn run_callback<F>(&mut self, mut callback: F) 
     where 
         F: FnMut(&mut CPU),
     {

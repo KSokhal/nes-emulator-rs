@@ -7,3 +7,6 @@
 # Ignore all logs except those used for testing
 /logs/*
 !/logs/nestest*.log
+
+# Save States
+save-state-*

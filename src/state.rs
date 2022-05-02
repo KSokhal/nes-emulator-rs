@@ -1,4 +1,4 @@
-use std::{fs::File, io::{Write, BufReader}};
+use std::{fs::File, io::{Write, BufReader, Result}};
 
 use serde_big_array::BigArray;
 
@@ -24,10 +24,10 @@ impl State {
         let _ = file.write_all(&rmp_serde::to_vec(&self).unwrap());
     }
     
-    pub fn load_state(state_number: u8) -> Self {
-        let file = File::open(format!("save-state-{}", state_number)).unwrap();
+    pub fn load_state(state_number: u8) -> Result<Self> {
+        let file = File::open(format!("save-state-{}", state_number))?;
         let reader = BufReader::new(file);
         let s: State = rmp_serde::from_read(reader).unwrap();
-        s
+        Ok(s)
     }
 }
