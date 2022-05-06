@@ -62,7 +62,7 @@ impl Bus<'_>{
         // Cycles multiplied by 3 since the PPU clock runs 3 time faster than CPU clock
         self.ppu.tick(cycles * 3);
         let nmi_after = self.ppu.nmi_interrupt.is_some();
-        // panic!();
+
         if !nmi_before && nmi_after {
             let action = (self.gameloop_callback)(&self.ppu, &mut self.joypad);
 
@@ -152,7 +152,6 @@ impl Memory for Bus<'_> {
             0x2008 ..= 0x3FFF => {
                 let mirror_down_addr = addr & 0b0010_0000_0000_0111;
                 self.write(mirror_down_addr, value);
-                // todo!("PPU is not supported yet");
             },
             // APU
             0x4000 ..= 0x4013 | 0x4015 => {},

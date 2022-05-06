@@ -57,7 +57,6 @@ impl PPU {
     }
 
     pub fn master_slave_select(&self) -> u8 {
-        // if !get_bit(self.ctrl, PPUControlFlags::SpriteSize as u8) {
         if !get_bit(self.ctrl, ControlFlags::MasterSlaveSelect as u8) {
             0
         } else {

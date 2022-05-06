@@ -7,7 +7,7 @@ pub struct AddrRegister {
 impl Default for AddrRegister {
     fn default() -> Self {
         AddrRegister {
-            value: (0, 0), // high byte first, lo byte second
+            value: (0, 0), // high byte first, low byte second
             hi_ptr: true,
         }
     }

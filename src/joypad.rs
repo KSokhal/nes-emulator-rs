@@ -39,7 +39,6 @@ impl Joypad {
     }
 
     pub fn write(&mut self, data: u8) {
-        // self.strobe = data & 1 == 1;
         self.strobe = get_bit(data, 0);
         if self.strobe {
             self.button_index = 0
